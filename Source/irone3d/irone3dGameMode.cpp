@@ -1,13 +1,31 @@
 #include "irone3dGameMode.h"
 #include "UObject/ConstructorHelpers.h"
-#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
-#include "Runtime/Engine/Classes/Engine/World.h"
-#include "Runtime/Engine/Classes/Engine/LevelStreaming.h"
-#include <set>
+#include <Runtime/Engine/Classes/Engine/World.h>
+#include <Runtime/Engine/Classes/Camera/CameraActor.h>
+#include <Runtime/Engine/Classes/Camera/CameraComponent.h>
+#include <GameFramework/CharacterMovementComponent.h>
+#include <Runtime/CoreUObject/Public/UObject/UObjectIterator.h>
+//#include <Runtime/Engine/Classes/GameFramework/Pawn.h>
+//#include <Runtime/Engine/Classes/GameFramework/PawnMovementComponent.h>
+//#include <Runtime/Engine/Classes/GameFramework/Character.h>
+//#include <Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h>
+#include <Blueprint/UserWidget.h>
+#include <EngineGlobals.h>
+#include <Runtime/Engine/Classes/Engine/Engine.h>
+#include <Runtime/Engine/Classes/Kismet/GameplayStatics.h>
+#include "Irone3dGameState.h"
+#include "RoomTransitionTrigger.h"
+#include "Irone3DPlayer.h"
+#include "Irone3DPlayerController.h"
+const float Airone3dGameMode::LEVEL_TRANSITION_FADE_TIME = 0.75f;
 Airone3dGameMode::Airone3dGameMode()
+	:transitioning(false)
+	,fadeTime(-1.f)
 {
+	PrimaryActorTick.bCanEverTick = true;
 	// set default pawn class to our Blueprinted character //
-	//static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/ThirdPersonCPP/Blueprints/ThirdPersonCharacter"));
+	//static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(
+	//	TEXT("/Game/ThirdPersonCPP/Blueprints/ThirdPersonCharacter"));
 	//if (PlayerPawnBPClass.Class != NULL)
 	//{
 	//	DefaultPawnClass = PlayerPawnBPClass.Class;
@@ -16,266 +34,240 @@ Airone3dGameMode::Airone3dGameMode()
 void Airone3dGameMode::InitGame(const FString & MapName, 
 	const FString & Options, FString & ErrorMessage)
 {
-	static const unsigned ROOM_ARRAY_SIZE = 5;
+	UE_LOG(LogTemp, Warning,
+		TEXT("MapName=%s"), *MapName);
 	Super::InitGame(MapName, Options, ErrorMessage);
 	auto world = GetWorld();
 	if (!world)
 	{
 		return;
 	}
-	struct LevelGenEdge
+	// Need to spawn a persistent camera actor for room transitions //
+	FActorSpawnParameters cameraSpawnParams;
+	cameraSpawnParams.bNoFail = true;
+	cameraSpawnParams.Name = TEXT("cameraRoomTransitions");
+	transitionCamera = world->SpawnActor<ACameraActor>(cameraSpawnParams);
+	// create HUD widget //
+	check(classHUD);
+	widgetHUD = CreateWidget<UUserWidget>(world, classHUD);
+	if (widgetHUD)
 	{
-		// Even though these names suggest edge directionality,
-		//	this algorithm treats these edges as bi-directional.
-		int32 indexFrom;
-		int32 indexTo;
-		float weight;
-	};
-	struct LevelGenNode
-	{
-		bool hasNorth;
-		bool hasSouth;
-		bool hasEast;
-		bool hasWest;
-	};
-	// Build a list of all edges with randomized weights
-	TArray<LevelGenEdge> edgeList;
-	for (int32 r = 0; r < ROOM_ARRAY_SIZE; r++)
-	{
-		for (int32 c = 0; c < ROOM_ARRAY_SIZE; c++)
-		{
-			LevelGenEdge newEdge;
-			newEdge.indexFrom = r*ROOM_ARRAY_SIZE + c;
-			newEdge.indexTo = r*ROOM_ARRAY_SIZE + (c + 1);
-			newEdge.weight = FMath::RandRange(0.f, 1.f);
-			if (c + 1 < ROOM_ARRAY_SIZE)
-			{
-				edgeList.Add(newEdge);
-			}
-			newEdge.indexTo = (r+1)*ROOM_ARRAY_SIZE + c;
-			newEdge.weight = FMath::RandRange(0.f, 1.f);
-			if (r + 1 < ROOM_ARRAY_SIZE)
-			{
-				edgeList.Add(newEdge);
-			}
-		}
+		widgetHUD->AddToViewport();
 	}
-	/// DEBUG ///
-	///for (auto e : edgeList)
-	///{
-	///	UE_LOG(LogTemp, Warning, TEXT("Edge={from:%d,to:%d,weight:%f}"),
-	///		e.indexFrom, e.indexTo, e.weight);
-	///}
-	/// ////////////////
-	// initialize storage container for final level layout data
-	//	to be accumulated during the algorithm
-	TArray<TArray<LevelGenNode>> finalLevelLayout;
-	finalLevelLayout.SetNum(ROOM_ARRAY_SIZE);
-	for (int32 r = 0; r < ROOM_ARRAY_SIZE; r++)
+}
+void Airone3dGameMode::InitGameState()
+{
+	Super::InitGameState();
+	auto world = GetWorld();
+	if (!world)
 	{
-		finalLevelLayout[r].SetNum(ROOM_ARRAY_SIZE);
-		for (int32 c = 0; c < ROOM_ARRAY_SIZE; c++)
-		{
-			finalLevelLayout[r][c].hasNorth = false;
-			finalLevelLayout[r][c].hasSouth = false;
-			finalLevelLayout[r][c].hasEast  = false;
-			finalLevelLayout[r][c].hasWest  = false;
-		}
+		return;
 	}
-	std::set<int32> pickedNodeIndexes;
-	// sort the list of edges based on weight
-	auto edgeWeightSort = [](const LevelGenEdge& a, const LevelGenEdge& b)->bool
+	// Generate the level map //
+	auto gs = world->GetGameState<AIrone3dGameState>();
+	if (!gs)
 	{
-		// "a" goes before "b" if:
-		return a.weight < b.weight;
-	};
-	edgeList.Sort(edgeWeightSort);
-	///DEBUG ///
-	///FString strEdgeListWeights;
-	///for (auto e : edgeList)
-	///{
-	///	strEdgeListWeights += FString::SanitizeFloat(e.weight) + ",";
-	///}
-	///UE_LOG(LogTemp, Warning, 
-	///	TEXT("Sorted edgeList weights={%s}"), *strEdgeListWeights);
-	/// //////////
-	// select the edge with the smallest weight
-	//	  and add mark the selected edge's nodes as "picked"
-	auto pickEdge = [&](TArray<LevelGenEdge>& list, int32 index)->void
+		UE_LOG(LogTemp, Warning,
+			TEXT("ERROR - could not get world's AIrone3dGameState"));
+		return;
+	}
+	gs->generateLevelMap(world);
+}
+void Airone3dGameMode::StartPlay()
+{
+	Super::StartPlay();
+}
+void Airone3dGameMode::Tick(float deltaSeconds)
+{
+	Super::Tick(deltaSeconds);
+	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Orange,
+	//	FString::Printf(TEXT("Airone3dGameMode::Tick????")));
+	if (fadeTime > 0 && fadeTimeTotal > 0)
 	{
-		auto edge = list[index];
-		//list.RemoveAt(index);
-		pickedNodeIndexes.insert(edge.indexFrom);
-		pickedNodeIndexes.insert(edge.indexTo);
-		int32 fromRow = edge.indexFrom / ROOM_ARRAY_SIZE;
-		int32 fromCol = edge.indexFrom % ROOM_ARRAY_SIZE;
-		int32 toRow   = edge.indexTo   / ROOM_ARRAY_SIZE;
-		int32 toCol   = edge.indexTo   % ROOM_ARRAY_SIZE;
-		if (fromRow == toRow)
+		fadeTime = FMath::Max(fadeTime - deltaSeconds, 0.f);
+		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Orange,
+		//	FString::Printf(TEXT("fadeTime=%f/%f   deltaSeconds=%f"), fadeTime, fadeTimeTotal,deltaSeconds));
+		float ratio = fadeTime / fadeTimeTotal;
+		if (!fadingIn)
 		{
-			if (fromCol < toCol)
+			ratio = 1.f - ratio;
+		}
+		colorFullScreenTexture.A = ratio;
+		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Orange,
+		//	FString::Printf(TEXT("colorFullScreenTexture.A=%f"), colorFullScreenTexture.A));
+		setFullscreenTextureColor(colorFullScreenTexture);
+		if (fadeTime <= 0)
+		{
+			// the fade effect has just ended //
+			if (fadingIn)
 			{
-				finalLevelLayout[fromRow][fromCol].hasEast = true;
-				finalLevelLayout[toRow][toCol].hasWest = true;
 			}
 			else
 			{
-				check(fromCol > toCol);
-				finalLevelLayout[fromRow][fromCol].hasWest = true;
-				finalLevelLayout[toRow][toCol].hasEast = true;
-			}
-		}
-		else
-		{
-			check(fromCol == toCol);
-			if (fromRow < toRow)
-			{
-				finalLevelLayout[fromRow][fromCol].hasSouth = true;
-				finalLevelLayout[toRow][toCol].hasNorth = true;
-			}
-			else
-			{
-				check(fromRow > toRow);
-				finalLevelLayout[fromRow][fromCol].hasNorth = true;
-				finalLevelLayout[toRow][toCol].hasSouth = true;
-			}
-		}
-	};
-	pickEdge(edgeList, 0);
-	// accumulate list of edges that have only one pickedNodeIndex
-	TArray<LevelGenEdge> adjacentEdges;
-	auto accumulateAdjacentEdges = [&]()->void
-	{
-		adjacentEdges.Empty();
-		for (int32 e = 0; e < edgeList.Num(); e++)
-		{
-			auto edge = edgeList[e];
-			auto indexFromIt = pickedNodeIndexes.find(edge.indexFrom);
-			auto indexToIt = pickedNodeIndexes.find(edge.indexTo);
-			if ((indexFromIt == pickedNodeIndexes.end() &&
-				 indexToIt   != pickedNodeIndexes.end()) ||
-				(indexFromIt != pickedNodeIndexes.end() &&
-				 indexToIt   == pickedNodeIndexes.end()))
-			{
-				adjacentEdges.Add(edge);
-			}
-		}
-	};
-	accumulateAdjacentEdges();
-	// while the list of adjacent edges is not empty:
-	while (adjacentEdges.Num() > 0)
-	{
-		//	sort the list of adjacent edges
-		adjacentEdges.Sort(edgeWeightSort);
-		//	select the edge with the smallest weight
-		//		and add mark the selected edge's nodes as "picked"
-		pickEdge(adjacentEdges, 0);
-		//	accumulate a list of edges that have only one pickedNodeIndex
-		accumulateAdjacentEdges();
-	}
-	// at this point, finalLevelLayout contains our minimum spanning tree
-	for (int32 r = 0; r < ROOM_ARRAY_SIZE; r++)
-	{
-		for (int32 c = 0; c < ROOM_ARRAY_SIZE; c++)
-		{
-			auto& node = finalLevelLayout[r][c];
-			int8 numEdges = 0;
-			if (node.hasNorth) numEdges++;
-			if (node.hasSouth) numEdges++;
-			if (node.hasEast) numEdges++;
-			if (node.hasWest) numEdges++;
-			FString levelDir = "/Game/levels/proceduralRooms/NESW/";
-			switch (numEdges)
-			{
-			case 1:
-				if (node.hasNorth)
-				{
-					levelDir = "/Game/levels/proceduralRooms/N/";
-				}
-				else if (node.hasSouth)
-				{
-					levelDir = "/Game/levels/proceduralRooms/S/";
-				}
-				else if (node.hasEast)
-				{
-					levelDir = "/Game/levels/proceduralRooms/E/";
-				}
-				else
-				{
-					check(node.hasWest);
-					levelDir = "/Game/levels/proceduralRooms/W/";
-				}
-				break;
-			case 2:
-				if (node.hasNorth && node.hasSouth)
-				{
-					levelDir = "/Game/levels/proceduralRooms/NS/";
-				}
-				else if (node.hasEast && node.hasWest)
-				{
-					levelDir = "/Game/levels/proceduralRooms/WE/";
-				}
-				else if (node.hasEast && node.hasSouth)
-				{
-					levelDir = "/Game/levels/proceduralRooms/ES/";
-				}
-				else if (node.hasNorth && node.hasEast)
-				{
-					levelDir = "/Game/levels/proceduralRooms/NE/";
-				}
-				else if (node.hasNorth && node.hasWest)
-				{
-					levelDir = "/Game/levels/proceduralRooms/NW/";
-				}
-				else
-				{
-					check(node.hasSouth && node.hasWest);
-					levelDir = "/Game/levels/proceduralRooms/SW/";
-				}
-				break;
-			case 3:
-				if (node.hasEast && node.hasSouth && node.hasWest)
-				{
-					levelDir = "/Game/levels/proceduralRooms/ESW/";
-				}
-				else if (node.hasNorth && node.hasEast && node.hasSouth)
-				{
-					levelDir = "/Game/levels/proceduralRooms/NES/";
-				}
-				else if (node.hasNorth && node.hasEast && node.hasWest)
-				{
-					levelDir = "/Game/levels/proceduralRooms/NEW/";
-				}
-				else
-				{
-					check(node.hasSouth && node.hasWest && node.hasNorth);
-					levelDir = "/Game/levels/proceduralRooms/SWN/";
-				}
-				break;
-			case 4:
-				break;
-			default:
-				check(false);
-				break;
-			}
-			// we now should know what type of room to load (levelDir)
-			//	as well as where we need to put it (r & c)
-			const FString roomName = levelDir + FString::FromInt(0);
-			const FString uniqueRoomInstanceString = 
-				"room" + FString::FromInt(r*ROOM_ARRAY_SIZE+c);
-			//UE_LOG(LogTemp, Warning, 
-			//	TEXT("uniqueRoomInstanceString='%s'"), *uniqueRoomInstanceString);
-			createLevelInstance(FName(*roomName), uniqueRoomInstanceString);
-			ULevelStreaming* levelStreaming = UGameplayStatics::GetStreamingLevel(
-				world, FName(*uniqueRoomInstanceString));
-			if (levelStreaming)
-			{
-				levelStreaming->bShouldBeLoaded = true;
-				levelStreaming->bShouldBeVisible = true;
-				static const float ROOM_SIZE = 2500;
-				const FVector roomLocation(c*ROOM_SIZE, r*ROOM_SIZE, 0);
-				levelStreaming->LevelTransform.SetLocation(roomLocation);
 			}
 		}
 	}
+}
+void Airone3dGameMode::startRoomTransition(ARoomTransitionTrigger* trigger)
+{
+	if (transitioning)
+	{
+		return;
+	}
+	UWorld* world = GetWorld();
+	check(world);
+	if (!world)
+	{
+		return;
+	}
+	/// ASSUMPTION: only one player per game:
+	APlayerController* pc = world->GetFirstPlayerController();
+	check(pc);
+	if (!pc)
+	{
+		return;
+	}
+	APawn* pPawn = pc->GetPawn();
+	check(pPawn);
+	if (!pPawn)
+	{
+		return;
+	}
+	AIrone3DPlayer* player = Cast<AIrone3DPlayer>(pPawn);
+	check(player);
+	if (!player)
+	{
+		return;
+	}
+	AIrone3DPlayerController* ironePc = Cast<AIrone3DPlayerController>(pc);
+	check(ironePc);
+	if (!ironePc)
+	{
+		return;
+	}
+	AIrone3dGameState* gs = world->GetGameState<AIrone3dGameState>();
+	check(gs);
+	if (!gs)
+	{
+		return;
+	}
+    /*
+		1 ) Get the FString of the current Level name from GameState
+        2 ) pause the game
+		3 ) make the player able to move while paused
+		4 ) set the player camera to be a certain static location for the transition
+		5 ) set the player at a start location at the entrance to the transition
+		6 ) tell the player to move to a location 
+			that is out of view of the transition cam
+		7 ) Get the FString of the next Level name from GameState, according to exitVec
+        8 ) fade-out to black
+            --- ON FADE-OUT COMPLETE ---
+        9 ) Load the destination level
+            --- ON DESTINATION LEVEL LOADED ---
+		10) Pause all the entities again since more might have just spawned
+		11) if this is the first time the room has been loaded,
+			cull enemies to fit the difficulty
+		12) set the new room's "hasBeenVisited" flag
+        13) set the player camera to be a certain static location that will
+			see the player when they finish moving into the new room
+        14) set the room we came from to be not visible.  It can remain loaded
+			since all the entities should now be paused
+            --- ON SOURCE LEVEL UNLOADED ---
+		15) move the player to a position that is out of the view of the new camera
+		16) tell the player to move into a position that is in front of the 
+			opposing RoomTransitionTrigger in the new Room
+        17) fade-in from black
+            --- ON FADE-IN COMPLETE ---
+        18) unpause all the entities who were spawned from the current room
+		19) make sure the player can no longer move while the game is paused
+    */
+	//1 ) Get the FString of the current Level name from GameState
+	//strTransitionLevelCameFrom = UGameplayStatics::GetCurrentLevelName(world);
+	strTransitionLevelCameFrom = gs->currentRoomLevelName();
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+		FString::Printf(TEXT("strTransitionLevelCameFrom=%s"), *strTransitionLevelCameFrom));
+	//2) pause the game
+	TSet<AActor*> currRoomActorSet = gs->getCurrentRoomActorSet();
+	///TODO: use the room actor set and update them properly with the appropriate actors (creeps, etc...)
+	for (TObjectIterator<AActor> actIt; actIt; ++actIt)
+	{
+		if (actIt->GetWorld() != world)
+		{
+			continue;
+		}
+		if (*actIt == this ||
+			*actIt == pPawn ||
+			*actIt == pc)
+		{
+	//3 ) make the player able to move while paused
+			// also gotta make sure the game mode can still tick while "paused"
+			continue;
+		}
+		UE_LOG(LogTemp, Warning, 
+			TEXT("setting CustomTimeDilation=0.f for actIt->GetName()=%s"),
+			*actIt->GetName())
+		actIt->CustomTimeDilation = 0.f;
+	}
+	//4 ) set the player camera to be a certain static location for the transition
+	// -get the RoomTransitionTrigger the player is touching right now //
+	check(trigger);
+	// -determine which location the camera actor should go relative to the //
+	//		trigger based on transitionExitDirection						//
+	const FVector triggerLocation = trigger->GetActorLocation();
+	// default location for east-facing transition triggers
+	FVector transitionCamOffset{ -110,160,200 };
+	exitVec = trigger->getExitVector();
+	const float exitVecRadians = FMath::Atan2(exitVec.Y, exitVec.X);
+	transitionCamOffset = transitionCamOffset.RotateAngleAxis(
+		FMath::RadiansToDegrees(exitVecRadians), { 0,0,1 });
+	UE_LOG(LogTemp, Warning, TEXT("transitionCamOffset=%s"),
+		*transitionCamOffset.ToString());
+	// -place a persistent camera actor at this location //
+	transitionCamera->SetActorLocation(triggerLocation + transitionCamOffset);
+	// -set the player's camera to be this persistent camera //
+	pc->SetViewTarget(transitionCamera);
+	//5 ) set the player at a start location at the entrance to the transition
+	static const float TRANSITION_PLAYER_START_DISTANCE = -300;
+	static const float TRANSITION_CAM_FOCUS_DISTANCE = -175;
+	const FVector triggerBottom = trigger->getBottomLocation();
+	pPawn->SetActorLocation(triggerBottom +
+		exitVec * TRANSITION_PLAYER_START_DISTANCE);
+	player->GetCharacterMovement()->Velocity = FVector::ZeroVector;
+	const FVector camFocusLoc = triggerLocation +
+		exitVec * TRANSITION_CAM_FOCUS_DISTANCE;
+	const FVector playerToCamVec = 
+		camFocusLoc - transitionCamera->GetActorLocation();
+	transitionCamera->SetActorRotation(playerToCamVec.ToOrientationRotator());
+	//6 ) tell the player to move to a location 
+	//	that is out of view of the transition cam
+	ironePc->transitionExitToLocation(trigger->GetActorLocation() + exitVec * 100);
+	//7 ) Get the FString of the next Level name from GameState, according to exitVec
+	strTransitionLevelGoingTo = gs->adjacentRoomLevelName(exitVec);
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+		FString::Printf(TEXT("strTransitionLevelGoingTo=%s"), *strTransitionLevelGoingTo));
+    //8 ) fade-out to black
+	fadeOut(FLinearColor{ 0,0,0 }, LEVEL_TRANSITION_FADE_TIME);
+	transitioning = true;
+}
+void Airone3dGameMode::fadeOut(const FLinearColor & fadeColor, float fadeTime)
+{
+	fade(false, fadeColor, fadeTime);
+}
+void Airone3dGameMode::fadeIn(const FLinearColor & fadeColor, float fadeTime)
+{
+	fade(true, fadeColor, fadeTime);
+}
+void Airone3dGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+}
+void Airone3dGameMode::fade(bool in, const FLinearColor & fadeColor, float fadeTime)
+{
+	fadingIn = in;
+	this->fadeTime = fadeTimeTotal = fadeTime;
+	colorFullScreenTexture = fadeColor;
+	colorFullScreenTexture.A = in ? 1.f : 0.f;
+	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
+	//	FString::Printf(TEXT("colorFullScreenTexture.A=%f"), colorFullScreenTexture.A));
+	setFullscreenTextureColor(colorFullScreenTexture);
 }

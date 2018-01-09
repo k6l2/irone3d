@@ -12,6 +12,10 @@ class IRONE3D_API AIrone3DPlayerController : public APlayerController
 	GENERATED_BODY()
 public:
     AIrone3DPlayerController();
+	void transitionExitToLocation(const FVector& exitLocation);
+	void transitionEnterToLocation(const FVector& enterLocation);
+	virtual void Tick(float deltaSeconds) override;
+	bool isAutoMoving() const;
 protected:
     virtual void SetupInputComponent() override;
 private:
@@ -26,11 +30,14 @@ private:
     void lookUp(float value);
     void lookUpRate(float value);
 private:
-	// Base turn rate, in deg/sec. Other scaling may affect final turn rate.
+	FVector autoMoveToLocationPoint;
+	FVector autoMoveToLocationRay;
 	UPROPERTY(VisibleAnywhere, Category=Camera)
-	float baseTurnRate;
-	// Base look up/down rate, in deg/sec. Other scaling may affect final rate.
+		// Base turn rate, in deg/sec. Other scaling may affect final turn rate.
+		float baseTurnRate;
 	UPROPERTY(VisibleAnywhere, Category=Camera)
-	float baseLookUpRate;
+		// Base look up/down rate, in deg/sec. Other scaling may affect final rate.
+		float baseLookUpRate;
 	float deadzone;
+	bool autoMoveToLocation;
 };

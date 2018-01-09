@@ -1,14 +1,22 @@
 // YOLO SWAG 420
 #include "Irone3DPlayer.h"
-#include "Camera/CameraComponent.h"
-#include "GameFramework/SpringArmComponent.h"
-#include "GameFramework/PawnMovementComponent.h"
-#include "Runtime/Engine/Classes/Components/StaticMeshComponent.h"
-#include "Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h"
+#include <Camera/CameraComponent.h>
+#include <GameFramework/SpringArmComponent.h>
+#include <GameFramework/PawnMovementComponent.h>
+#include <GameFramework/CharacterMovementComponent.h>
+#include <Runtime/Engine/Classes/Components/StaticMeshComponent.h>
+#include <Runtime/Engine/Classes/Components/SkeletalMeshComponent.h>
+#include <Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h>
+#include <Runtime/Engine/Classes/Components/CapsuleComponent.h>
+#include <Runtime/Engine/Classes/Engine/Engine.h>
+#include <EngineGlobals.h>
 #include "CombatComponent.h"
+#include "Irone3DPlayer.h"
+#include "Irone3DPlayerController.h"
 AIrone3DPlayer::AIrone3DPlayer()
     :cameraBoom(CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom")))
     ,camera(CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera")))
+    ,meshCharacter(CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshCharacter")))
     ,meshAttack(CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshAttack")))
     ,attackCombatComponent(CreateDefaultSubobject<UCombatComponent>(TEXT("AttackCombat")))
     ,hardLanding(false)
@@ -20,6 +28,7 @@ AIrone3DPlayer::AIrone3DPlayer()
 	PrimaryActorTick.bCanEverTick = true;
     cameraBoom->SetupAttachment(RootComponent);
     camera->SetupAttachment(cameraBoom, USpringArmComponent::SocketName);
+	meshCharacter->SetupAttachment(RootComponent);
     meshAttack->SetupAttachment(RootComponent);
 	attackCombatComponent->SetupAttachment(meshAttack);
 }
@@ -29,6 +38,12 @@ void AIrone3DPlayer::moveForward(float value)
     {
         return;
     }
+	auto pController = Cast<AIrone3DPlayerController>(Controller);
+	if (pController && pController->isAutoMoving())
+	{
+		AddMovementInput(GetActorRotation().Vector());
+		return;
+	}
     // find out which way is forward
     const FRotator Rotation = Controller->GetControlRotation();
     const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -99,6 +114,14 @@ float AIrone3DPlayer::verticalVelocity1D() const
 }
 bool AIrone3DPlayer::isFalling() const
 {
+	if (Controller)
+	{
+		auto pController = Cast<AIrone3DPlayerController>(Controller);
+		if (pController && pController->isAutoMoving())
+		{
+			return false;
+		}
+	}
     auto movementComp = GetMovementComponent();
     check(movementComp);
     return movementComp->IsFalling();
@@ -129,6 +152,9 @@ void AIrone3DPlayer::tryAttackEnd()
 }
 bool AIrone3DPlayer::isTryingToAttack() const
 {
+	//UE_LOG(LogTemp, Warning,
+	//	TEXT("tryingAttack=%s"),
+	//	(tryingAttack ? "true":"false"))
     return tryingAttack;
 }
 void AIrone3DPlayer::attackStart()
@@ -164,6 +190,9 @@ void AIrone3DPlayer::Tick(float DeltaTime)
         dynMaterialSlash->SetScalarParameterValue(
 			"swipeOffset", 0.f);
     }
+	// Player animation should be able to tick while the game is paused
+	//	such as during transitions between rooms
+	//meshCharacter->SetTickableWhenPaused(GetTickableWhenPaused());
 }
 void AIrone3DPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {

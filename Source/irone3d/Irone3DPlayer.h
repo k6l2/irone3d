@@ -16,49 +16,51 @@ public:
     void turnRate(float value);
     void lookUpRate(float value);
     UFUNCTION(BlueprintCallable, Category=Animation)
-    float lateralSpeed() const;
+		float lateralSpeed() const;
     UFUNCTION(BlueprintCallable, Category=Animation)
-    float verticalSpeed() const;
+		float verticalSpeed() const;
     // Positive verticalVelocity1D values mean you are moving "upwards"
     UFUNCTION(BlueprintCallable, Category=Animation)
-    float verticalVelocity1D() const;
+		float verticalVelocity1D() const;
     UFUNCTION(BlueprintCallable, Category=Animation)
-    bool isFalling() const;
+		bool isFalling() const;
     UFUNCTION(BlueprintCallable, Category=Animation)
-    void hardLandingStart();
+		void hardLandingStart();
     UFUNCTION(BlueprintCallable, Category=Animation)
-    void hardLandingEnd();
+		void hardLandingEnd();
     UFUNCTION(BlueprintCallable, Category=Animation)
-    void canAttackStart();
+		void canAttackStart();
     UFUNCTION(BlueprintCallable, Category=Animation)
-    void canAttackEnd();
+		void canAttackEnd();
     void tryAttackStart();
     void tryAttackEnd();
     UFUNCTION(BlueprintCallable, Category=Animation)
-    bool isTryingToAttack() const;
+		bool isTryingToAttack() const;
     UFUNCTION(BlueprintCallable, Category=Animation)
-    void attackStart();
+		void attackStart();
     UFUNCTION(BlueprintCallable, Category=Animation)
-    void attackEnd();
+		void attackEnd();
     UFUNCTION(BlueprintCallable, Category=Animation)
-    void updateAttackAnimationProgress(float value);
+		void updateAttackAnimationProgress(float value);
 protected:
 	virtual void BeginPlay() override;
 private:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* cameraBoom;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* camera;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
-    class UStaticMeshComponent* meshAttack;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
-    class UCombatComponent* attackCombatComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, meta=(AllowPrivateAccess = "true"))
+		class USpringArmComponent* cameraBoom;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, meta=(AllowPrivateAccess = "true"))
+		class UCameraComponent* camera;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, meta=(AllowPrivateAccess = "true"))
+		class USkeletalMeshComponent* meshCharacter;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, meta=(AllowPrivateAccess = "true"))
+		class UStaticMeshComponent* meshAttack;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, meta=(AllowPrivateAccess = "true"))
+		class UCombatComponent* attackCombatComponent;
     UPROPERTY()
-    UMaterialInstanceDynamic* dynMaterialSlash;
+		UMaterialInstanceDynamic* dynMaterialSlash;
+    float attackAnimationProgress;
     bool hardLanding;
     // canAttack can only be true if we're in idle/walk/run state
     bool canAttack;
     bool tryingAttack;
     bool attackAnimationPlaying;
-    float attackAnimationProgress;
 };

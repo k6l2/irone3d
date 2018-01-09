@@ -10,8 +10,9 @@ public class irone3d : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "InputCore",
-                "HeadMountedDisplay",
-                "AIModule"
+                //"HeadMountedDisplay",
+                "AIModule",
+                "UMG"
             });
     }
 }
