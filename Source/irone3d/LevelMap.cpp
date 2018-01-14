@@ -198,10 +198,24 @@ void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 				{
 					levelStreaming->bShouldBeLoaded = true;
 					levelStreaming->bShouldBeVisible = true;
+					node.hasBeenVisited = true;
 				}
+				/// DEBUG //////////////df///////////////////////////////
+				//levelStreaming->bShouldBeLoaded = true;
+				//levelStreaming->bShouldBeVisible = true;
+				/// ///////////////////////////////////////////////////
 				static const float ROOM_SIZE = 2500;
 				const FVector roomLocation(x*ROOM_SIZE, y*ROOM_SIZE, 0);
 				levelStreaming->LevelTransform.SetLocation(roomLocation);
+				/// levelStreaming->GetLoadedLevel()->ApplyWorldOffset(roomLocation, false);
+				/// DEBUG ////////////////////////////////////////////////
+				///FLatentActionInfo latentInfo;
+				///latentInfo.CallbackTarget = this;
+				///latentInfo.ExecutionFunction = FName("onLevelStreamLoaded");
+				///latentInfo.Linkage = 1;
+				///latentInfo.UUID = y * ROOM_ARRAY_SIZE + x;
+				///UGameplayStatics::LoadStreamLevel(world,
+				///	FName(*uniqueRoomInstanceString), true, true, latentInfo);
 			}
 		}
 	}
@@ -214,6 +228,17 @@ ULevelMap::RoomCoord ULevelMap::getCurrCoord() const
 {
 	return currCoord;
 }
+bool ULevelMap::advanceCurrCoord(const FVector & exitVec)
+{
+	int8 offsetX = 0, offsetY = 0;
+	exitVecToOffsets(exitVec, offsetX, offsetY);
+	currCoord = RoomCoord{ uint8(currCoord.x() + offsetX), uint8(currCoord.y() + offsetY) };
+	check(currCoord.x() < ROOM_ARRAY_SIZE && currCoord.y() < ROOM_ARRAY_SIZE);
+	LevelGenNode& currNode = finalLevelLayout[currCoord.y()][currCoord.x()];
+	bool wasPreviouslyVisited = currNode.hasBeenVisited;
+	currNode.hasBeenVisited = true;
+	return !wasPreviouslyVisited;
+}
 FString ULevelMap::currentRoomLevelName()
 {
 	LevelGenNode& currNode = finalLevelLayout[currCoord.y()][currCoord.x()];
@@ -222,32 +247,7 @@ FString ULevelMap::currentRoomLevelName()
 FString ULevelMap::adjacentRoomLevelName(const FVector & exitVec)
 {
 	int8 offsetX = 0, offsetY = 0;
-	if (FMath::Abs(exitVec.X) > FMath::Abs(exitVec.Y))
-	{
-		if (exitVec.X > 0)
-		{
-			// EAST //
-			offsetX = 1;
-		}
-		else
-		{
-			// WEST //
-			offsetX = -1;
-		}
-	}
-	else
-	{
-		if (exitVec.Y > 0)
-		{
-			// SOUTH //
-			offsetY = 1;
-		}
-		else
-		{
-			// NORTH //
-			offsetY = -1;
-		}
-	}
+	exitVecToOffsets(exitVec, offsetX, offsetY);
 	int8 adjacentX = currCoord.x() + offsetX;
 	int8 adjacentY = currCoord.y() + offsetY;
 	if (adjacentX < 0 || adjacentX >= ROOM_ARRAY_SIZE ||
@@ -349,4 +349,37 @@ FString ULevelMap::findLevelDir(const LevelGenNode & node)
 		break;
 	}
 	return levelDir;
+}
+void ULevelMap::exitVecToOffsets(const FVector & exitVec, int8 & outOffsetX, int8 & outOffsetY)
+{
+	outOffsetX = outOffsetY = 0;
+	if (FMath::Abs(exitVec.X) > FMath::Abs(exitVec.Y))
+	{
+		if (exitVec.X > 0)
+		{
+			// EAST //
+			outOffsetX = 1;
+		}
+		else
+		{
+			// WEST //
+			outOffsetX = -1;
+		}
+	}
+	else
+	{
+		if (exitVec.Y > 0)
+		{
+			// SOUTH //
+			outOffsetY = 1;
+		}
+		else
+		{
+			// NORTH //
+			outOffsetY = -1;
+		}
+	}
+}
+void ULevelMap::onLevelStreamLoaded()
+{
 }

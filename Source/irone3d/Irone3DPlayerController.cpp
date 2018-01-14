@@ -2,7 +2,10 @@
 #include "Irone3DPlayerController.h"
 #include <GameFramework/CharacterMovementComponent.h>
 #include <Runtime/Engine/Classes/Components/CapsuleComponent.h>
+#include <EngineGlobals.h>
+#include <Runtime/Engine/Classes/Engine/Engine.h>
 #include "Irone3DPlayer.h"
+#include "irone3dGameMode.h"
 #define ECC_PLAYER_PAWN ECC_GameTraceChannel1
 #define ECC_ENEMY_PAWN  ECC_GameTraceChannel2
 AIrone3DPlayerController::AIrone3DPlayerController()
@@ -59,9 +62,11 @@ void AIrone3DPlayerController::Tick(float deltaSeconds)
 	{
 		const FVector toLocationPoint = autoMoveToLocationPoint - player->GetActorLocation();
 		const float dotProd = FVector::DotProduct(toLocationPoint, autoMoveToLocationRay);
+		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Orange,
+		//	FString::Printf(TEXT("autoMoveToLocation! dotProd=%f"), dotProd));
 		if (dotProd <= 0)
 		{
-			autoMoveToLocation = false;
+			onAutoMoveEnd();
 		}
 		else
 		{
@@ -182,4 +187,44 @@ void AIrone3DPlayerController::lookUpRate(float value)
     {
         ironePlayer->lookUpRate(value*baseLookUpRate);
     }
+}
+void AIrone3DPlayerController::onAutoMoveEnd()
+{
+	UWorld* world = GetWorld();
+	if (!world)
+	{
+		return;
+	}
+	AGameModeBase* gmb = world->GetAuthGameMode();
+	if (!gmb)
+	{
+		return;
+	}
+	Airone3dGameMode* gm = Cast<Airone3dGameMode>(gmb);
+	if (!gm)
+	{
+		return;
+	}
+	auto pawn = GetPawn();
+	if (!pawn)
+	{
+		return;
+	}
+	auto player = Cast<AIrone3DPlayer>(pawn);
+	if (!player)
+	{
+		return;
+	}
+	// re-enable gravity
+	auto movementComp = player->GetCharacterMovement();
+	check(movementComp);
+	movementComp->GravityScale = 1.f;
+	// Re-enable collision with other entities
+	auto capsule = player->GetCapsuleComponent();
+	check(capsule);
+	///capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	capsule->SetCollisionResponseToChannel(ECC_ENEMY_PAWN, ECollisionResponse::ECR_Block);
+	SetViewTarget(pawn);
+	autoMoveToLocation = false;
+	gm->onEndTransition();
 }

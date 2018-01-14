@@ -27,3 +27,7 @@ TSet<AActor*> AIrone3dGameState::getCurrentRoomActorSet() const
 {
 	return levelMap->getCurrentRoomActorSet();
 }
+bool AIrone3dGameState::advanceCurrCoord(const FVector & exitVec)
+{
+	return levelMap->advanceCurrCoord(exitVec);
+}

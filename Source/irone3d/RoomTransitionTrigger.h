@@ -11,6 +11,8 @@ public:
 	ARoomTransitionTrigger();
 	FVector getExitVector() const;
 	FVector getBottomLocation() const;
+protected:
+	virtual void BeginPlay() override;
 private:
 	UFUNCTION()
 		void onOverlapBegin(UPrimitiveComponent* OverlappedComp,

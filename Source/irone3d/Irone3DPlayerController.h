@@ -3,9 +3,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "Irone3DPlayerController.generated.h"
-/**
- * 
- */
 UCLASS()
 class IRONE3D_API AIrone3DPlayerController : public APlayerController
 {
@@ -13,7 +10,6 @@ class IRONE3D_API AIrone3DPlayerController : public APlayerController
 public:
     AIrone3DPlayerController();
 	void transitionExitToLocation(const FVector& exitLocation);
-	void transitionEnterToLocation(const FVector& enterLocation);
 	virtual void Tick(float deltaSeconds) override;
 	bool isAutoMoving() const;
 protected:
@@ -29,9 +25,12 @@ private:
     void turnRate(float value);
     void lookUp(float value);
     void lookUpRate(float value);
+	void onAutoMoveEnd();
 private:
-	FVector autoMoveToLocationPoint;
-	FVector autoMoveToLocationRay;
+	UPROPERTY(VisibleAnywhere, Category = AutoMove)
+		FVector autoMoveToLocationPoint;
+	UPROPERTY(VisibleAnywhere, Category = AutoMove)
+		FVector autoMoveToLocationRay;
 	UPROPERTY(VisibleAnywhere, Category=Camera)
 		// Base turn rate, in deg/sec. Other scaling may affect final turn rate.
 		float baseTurnRate;

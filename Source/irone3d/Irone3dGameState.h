@@ -14,6 +14,7 @@ public:
 	FString adjacentRoomLevelName(const FVector& exitVec);
 	void addActorToCurrentRoom(AActor* actor);
 	TSet<AActor*> getCurrentRoomActorSet() const;
+	bool advanceCurrCoord(const FVector& exitVec);
 private:
 	UPROPERTY()
 		class ULevelMap* levelMap;

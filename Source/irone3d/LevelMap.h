@@ -55,6 +55,9 @@ public:
 	void generateNewLevel(UWorld* world, int8 floorNumber);
 	RoomCoord getStartCoord() const;
 	RoomCoord getCurrCoord() const;
+	// sets the "hasBeenVisited" flag in the new room to true
+	//	returns true if the room we move to was previously not visited
+	bool advanceCurrCoord(const FVector& exitVec);
 	FString currentRoomLevelName();
 	FString adjacentRoomLevelName(const FVector& exitVec);
 	void addActorToCurrentRoom(AActor* actor);
@@ -64,6 +67,11 @@ public:
 	TSet<AActor*> getCurrentRoomActorSet() const;
 private:
 	FString findLevelDir(const LevelGenNode& node);
+	void exitVecToOffsets(const FVector& exitVec, int8& outOffsetX, int8& outOffsetY);
+	/// DEBUG TEST FUNCTION to figure out wtf is going on w/ BSP not 
+	///		getting a world offset
+	UFUNCTION(BlueprintCallable, Category = Transitions)
+		void onLevelStreamLoaded();
 private:
 	TArray<TArray<LevelGenNode>> finalLevelLayout;
 	RoomCoord startCoord;

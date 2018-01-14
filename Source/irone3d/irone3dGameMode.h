@@ -7,6 +7,7 @@ class IRONE3D_API Airone3dGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 private:
+	static const FVector TRANSITION_CAM_OFFSET;
 	static const float LEVEL_TRANSITION_FADE_TIME;
 	enum class TransitionDirection : uint8
 	{
@@ -33,10 +34,14 @@ public:
 		void setFullscreenTextureColor(const FLinearColor& color);
 	void fadeOut(const FLinearColor& fadeColor, float fadeTime);
 	void fadeIn(const FLinearColor& fadeColor, float fadeTime);
+	// this should only get called by AIrone3DPlayer when they finish auto-moving inside the next room!
+	void onEndTransition();
 protected:
 	virtual void BeginPlay() override;
 private:
 	void fade(bool in, const FLinearColor& fadeColor, float fadeTime);
+	UFUNCTION(BlueprintCallable, Category = Transitions)
+		void onLoadStreamLevelFinished();
 private:
 	UPROPERTY(Category = Widgets, EditDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<class UUserWidget> classHUD;
@@ -60,4 +65,6 @@ private:
 		bool fadingIn;
 	UPROPERTY(VisibleAnywhere, Category = Transitions)
 		bool transitioning;
+	UPROPERTY(VisibleAnywhere, Category = Transitions)
+		bool justLoadedRoom;
 };

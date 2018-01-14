@@ -2,15 +2,16 @@
 #include "creep.h"
 #include "AiControllerCreep.h"
 #include "Irone3DPlayer.h"
-#include "GameFramework/PawnMovementComponent.h"
-#include "Runtime/AIModule/Classes/Perception/PawnSensingComponent.h"
 #include "UnitComponent.h"
-#include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
-#include "Runtime/Engine/Classes/Components/SkeletalMeshComponent.h"
-#include "Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h"
-#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
-#include "Runtime/Engine/Classes/Particles/ParticleSystem.h"
-#include "Runtime/Engine/Classes/Particles/ParticleSystemComponent.h"
+#include "Irone3dGameState.h"
+#include <GameFramework/PawnMovementComponent.h>
+#include <Runtime/AIModule/Classes/Perception/PawnSensingComponent.h>
+#include <Runtime/Engine/Classes/Components/CapsuleComponent.h>
+#include <Runtime/Engine/Classes/Components/SkeletalMeshComponent.h>
+#include <Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h>
+#include <Runtime/Engine/Classes/Kismet/GameplayStatics.h>
+#include <Runtime/Engine/Classes/Particles/ParticleSystem.h>
+#include <Runtime/Engine/Classes/Particles/ParticleSystemComponent.h>
 const FLinearColor Acreep::HURT_OUTLINE_COLOR = {1.f,0.f,0.f,1.f};
 const float Acreep::HURT_FLASH_SECONDS = 5.f;
 Acreep::Acreep()
@@ -58,6 +59,19 @@ void Acreep::BeginPlay()
 	//TArray < TArray < FString > > sys;
 	//TArray < TArray < FString > > param;
 	//particleSystemBlood->GetParametersUtilized(sys, param);
+	UWorld* world = GetWorld();
+	check(world);
+	if (!world)
+	{
+		return;
+	}
+	AIrone3dGameState* gs = world->GetGameState<AIrone3dGameState>();
+	check(gs);
+	if (!gs)
+	{
+		return;
+	}
+	gs->addActorToCurrentRoom(this);
 }
 void Acreep::onOverlapBegin(UPrimitiveComponent * OverlappedComponent, 
 	AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, 
