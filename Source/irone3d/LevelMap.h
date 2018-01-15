@@ -71,7 +71,7 @@ private:
 	/// DEBUG TEST FUNCTION to figure out wtf is going on w/ BSP not 
 	///		getting a world offset
 	UFUNCTION(BlueprintCallable, Category = Transitions)
-		void onLevelStreamLoaded();
+		void onStartLevelStreamLoaded();
 private:
 	TArray<TArray<LevelGenNode>> finalLevelLayout;
 	RoomCoord startCoord;

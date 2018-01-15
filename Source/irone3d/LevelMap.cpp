@@ -3,6 +3,8 @@
 #include <Runtime/Engine/Classes/Kismet/GameplayStatics.h>
 #include <Runtime/Engine/Classes/Engine/World.h>
 #include <Runtime/Engine/Classes/Engine/LevelStreaming.h>
+#include <Runtime/CoreUObject/Public/UObject/UObjectIterator.h>
+#include <Runtime/Engine/Classes/GameFramework/PlayerStart.h>
 #include <set>
 #include <tuple>
 #include "irone3dGameMode.h"
@@ -21,6 +23,16 @@ uint8 ULevelMap::RoomCoord::y() const
 }
 bool ULevelMap::RoomCoord::operator==(const RoomCoord & other) const
 {
+	//if (std::tie(m_x, m_y) == std::tie(other.m_x, other.m_y))
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("RoomCoords are equal! this=%d,%d other=%d,%d"),
+	//		m_x, m_y, other.m_x, other.m_y);
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("RoomCoords are NOT equal! this=%d,%d other=%d,%d"),
+	//		m_x, m_y, other.m_x, other.m_y);
+	//}
 	return std::tie(m_x, m_y) == std::tie(other.m_x, other.m_y);
 }
 ULevelMap::LevelGenNode::LevelGenNode()
@@ -179,10 +191,17 @@ void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 		for (uint8 x = 0; x < ROOM_ARRAY_SIZE; x++)
 		{
 			auto& node = finalLevelLayout[y][x];
+			const RoomCoord rc{ x,y };
 			FString levelDir = findLevelDir(node);
 			// we now should know what type of room to load (levelDir)
 			//	as well as where we need to put it (r & c)
-			const FString roomName = levelDir + FString::FromInt(0);
+			FString roomName = levelDir + FString::FromInt(0);
+			if (rc == startCoord)
+			{
+				roomName = levelDir + FString("S");
+			}
+			//UE_LOG(LogTemp, Warning, 
+			//	TEXT("x=%d y=%d roomName='%s'"), x,y, *roomName);
 			const FString uniqueRoomInstanceString =
 				"room" + FString::FromInt(y*ROOM_ARRAY_SIZE + x);
 			node.uniqueLevelName = uniqueRoomInstanceString;
@@ -193,29 +212,19 @@ void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 				world, FName(*uniqueRoomInstanceString));
 			if (levelStreaming)
 			{
-				RoomCoord rc{ x,y };
 				if (rc == startCoord)
 				{
-					levelStreaming->bShouldBeLoaded = true;
-					levelStreaming->bShouldBeVisible = true;
+					FLatentActionInfo latentInfo;
+					latentInfo.CallbackTarget = this;
+					latentInfo.ExecutionFunction = FName("onStartLevelStreamLoaded");
+					latentInfo.Linkage = 1;
+					UGameplayStatics::LoadStreamLevel(world,
+						FName(*uniqueRoomInstanceString), true, true, latentInfo);
 					node.hasBeenVisited = true;
 				}
-				/// DEBUG //////////////df///////////////////////////////
-				//levelStreaming->bShouldBeLoaded = true;
-				//levelStreaming->bShouldBeVisible = true;
-				/// ///////////////////////////////////////////////////
 				static const float ROOM_SIZE = 2500;
 				const FVector roomLocation(x*ROOM_SIZE, y*ROOM_SIZE, 0);
 				levelStreaming->LevelTransform.SetLocation(roomLocation);
-				/// levelStreaming->GetLoadedLevel()->ApplyWorldOffset(roomLocation, false);
-				/// DEBUG ////////////////////////////////////////////////
-				///FLatentActionInfo latentInfo;
-				///latentInfo.CallbackTarget = this;
-				///latentInfo.ExecutionFunction = FName("onLevelStreamLoaded");
-				///latentInfo.Linkage = 1;
-				///latentInfo.UUID = y * ROOM_ARRAY_SIZE + x;
-				///UGameplayStatics::LoadStreamLevel(world,
-				///	FName(*uniqueRoomInstanceString), true, true, latentInfo);
 			}
 		}
 	}
@@ -274,72 +283,72 @@ FString ULevelMap::findLevelDir(const LevelGenNode & node)
 	if (node.hasSouth) numEdges++;
 	if (node.hasEast) numEdges++;
 	if (node.hasWest) numEdges++;
-	FString levelDir = "/Game/levels/proceduralRooms/NESW/";
+	FString levelDir = "/Game/levels/proceduralRooms/NESW/NESW-";
 	switch (numEdges)
 	{
 	case 1:
 		if (node.hasNorth)
 		{
-			levelDir = "/Game/levels/proceduralRooms/N/";
+			levelDir = "/Game/levels/proceduralRooms/N/N-";
 		}
 		else if (node.hasSouth)
 		{
-			levelDir = "/Game/levels/proceduralRooms/S/";
+			levelDir = "/Game/levels/proceduralRooms/S/S-";
 		}
 		else if (node.hasEast)
 		{
-			levelDir = "/Game/levels/proceduralRooms/E/";
+			levelDir = "/Game/levels/proceduralRooms/E/E-";
 		}
 		else
 		{
 			check(node.hasWest);
-			levelDir = "/Game/levels/proceduralRooms/W/";
+			levelDir = "/Game/levels/proceduralRooms/W/W-";
 		}
 		break;
 	case 2:
 		if (node.hasNorth && node.hasSouth)
 		{
-			levelDir = "/Game/levels/proceduralRooms/NS/";
+			levelDir = "/Game/levels/proceduralRooms/NS/NS-";
 		}
 		else if (node.hasEast && node.hasWest)
 		{
-			levelDir = "/Game/levels/proceduralRooms/WE/";
+			levelDir = "/Game/levels/proceduralRooms/WE/WE-";
 		}
 		else if (node.hasEast && node.hasSouth)
 		{
-			levelDir = "/Game/levels/proceduralRooms/ES/";
+			levelDir = "/Game/levels/proceduralRooms/ES/ES-";
 		}
 		else if (node.hasNorth && node.hasEast)
 		{
-			levelDir = "/Game/levels/proceduralRooms/NE/";
+			levelDir = "/Game/levels/proceduralRooms/NE/NE-";
 		}
 		else if (node.hasNorth && node.hasWest)
 		{
-			levelDir = "/Game/levels/proceduralRooms/NW/";
+			levelDir = "/Game/levels/proceduralRooms/NW/NW-";
 		}
 		else
 		{
 			check(node.hasSouth && node.hasWest);
-			levelDir = "/Game/levels/proceduralRooms/SW/";
+			levelDir = "/Game/levels/proceduralRooms/SW/SW-";
 		}
 		break;
 	case 3:
 		if (node.hasEast && node.hasSouth && node.hasWest)
 		{
-			levelDir = "/Game/levels/proceduralRooms/ESW/";
+			levelDir = "/Game/levels/proceduralRooms/ESW/ESW-";
 		}
 		else if (node.hasNorth && node.hasEast && node.hasSouth)
 		{
-			levelDir = "/Game/levels/proceduralRooms/NES/";
+			levelDir = "/Game/levels/proceduralRooms/NES/NES-";
 		}
 		else if (node.hasNorth && node.hasEast && node.hasWest)
 		{
-			levelDir = "/Game/levels/proceduralRooms/NEW/";
+			levelDir = "/Game/levels/proceduralRooms/NEW/NEW-";
 		}
 		else
 		{
 			check(node.hasSouth && node.hasWest && node.hasNorth);
-			levelDir = "/Game/levels/proceduralRooms/SWN/";
+			levelDir = "/Game/levels/proceduralRooms/SWN/SWN-";
 		}
 		break;
 	case 4:
@@ -380,6 +389,44 @@ void ULevelMap::exitVecToOffsets(const FVector & exitVec, int8 & outOffsetX, int
 		}
 	}
 }
-void ULevelMap::onLevelStreamLoaded()
+void ULevelMap::onStartLevelStreamLoaded()
 {
+	// Need to set the Player's starting position manually 
+	//	when the first Level is loaded, because the APlayerStart located
+	//	in the starting room & isn't spawned when the player's Pawn is spawned! //
+	auto world = GetWorld();
+	check(world);
+	AGameModeBase* gmb = world->GetAuthGameMode();
+	check(gmb);
+	Airone3dGameMode* gm = Cast<Airone3dGameMode>(gmb);
+	check(gm);
+	gm->fadeIn(FLinearColor{ 0,0,0 }, 1.f);
+	/// ASSUMPTION: only one player per game:
+	APlayerController* pc = world->GetFirstPlayerController();
+	check(pc);
+	APawn* pPawn = pc->GetPawn();
+	check(pPawn);
+	//TSet<AActor*> currRoomActorSet = getCurrentRoomActorSet();
+	//for (auto& actor : currRoomActorSet)
+	//{
+	//	UE_LOG(LogTemp, Warning,
+	//		TEXT("initial room actors - actIt->GetName()=%s"),
+	//		*actor->GetName())
+	//}
+	for (TObjectIterator<AActor> actIt; actIt; ++actIt)
+	{
+		if (actIt->GetWorld() != world)
+		{
+			continue;
+		}
+		//UE_LOG(LogTemp, Warning,
+		//	TEXT("initial room actors - actIt->GetName()=%s"),
+		//	*actIt->GetName())
+		APlayerStart* pStart = Cast<APlayerStart>(*actIt);
+		if (pStart)
+		{
+			pPawn->SetActorLocation(pStart->GetActorLocation());
+			break;
+		}
+	}
 }
