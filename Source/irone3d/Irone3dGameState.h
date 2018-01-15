@@ -15,6 +15,7 @@ public:
 	void addActorToCurrentRoom(AActor* actor);
 	TSet<AActor*> getCurrentRoomActorSet() const;
 	bool advanceCurrCoord(const FVector& exitVec);
+	FVector currentRoomWorldOffset() const;
 private:
 	UPROPERTY()
 		class ULevelMap* levelMap;

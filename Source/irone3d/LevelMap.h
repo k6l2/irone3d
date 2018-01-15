@@ -30,6 +30,7 @@ public:
 		uint8 m_y;
 	};
 private:
+	static const float ROOM_SIZE;
 	struct LevelGenEdge
 	{
 		// Even though these names suggest edge directionality,
@@ -65,6 +66,7 @@ public:
 	//	should only be called like 1-2 times during a transition,
 	//	so the performance of the copy/nullify doesn't really matter all that much.
 	TSet<AActor*> getCurrentRoomActorSet() const;
+	FVector currentRoomWorldOffset() const;
 private:
 	FString findLevelDir(const LevelGenNode& node);
 	void exitVecToOffsets(const FVector& exitVec, int8& outOffsetX, int8& outOffsetY);

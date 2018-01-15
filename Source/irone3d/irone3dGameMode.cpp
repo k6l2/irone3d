@@ -14,6 +14,7 @@
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include <Runtime/Engine/Classes/Kismet/GameplayStatics.h>
 #include <Runtime/Engine/Classes/Engine/LevelStreaming.h>
+#include <Runtime/Engine/Classes/AI/Navigation/NavMeshBoundsVolume.h>
 #include "Irone3dGameState.h"
 #include "RoomTransitionTrigger.h"
 #include "Irone3DPlayer.h"
@@ -309,7 +310,37 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 	{
 		return;
 	}
-	TSet<AActor*> currRoomActorSet = gs->getCurrentRoomActorSet();
+	// Need to move the persistent ANavMeshBoundsVolume into the center of the new Level //
+	//	-First, find the ANavMeshBoundsVolume in the list of world Actors
+	ANavMeshBoundsVolume* navMesh = nullptr;
+	for (TObjectIterator<AActor> actIt; actIt; ++actIt)
+	{
+		if (actIt->GetWorld() != world)
+		{
+			continue;
+		}
+		auto navCast = Cast<ANavMeshBoundsVolume>(*actIt);
+		if (navCast)
+		{
+			navMesh = navCast;
+			break;
+		}
+	}
+	if (navMesh)
+	{
+		//	-Get the world-offset location of the current room
+		const FVector roomWorldOffset = gs->currentRoomWorldOffset();
+		//	-set the ANavMeshBoundsVolume to be this new location
+		FVector navMeshLocation = navMesh->GetActorLocation();
+		navMeshLocation.X = roomWorldOffset.X;
+		navMeshLocation.Y = roomWorldOffset.Y;
+		navMesh->SetActorLocation(navMeshLocation);
+	}
+	// This line of code is retarded and there really should be a 
+	//	better way up rebuilding nav meshes in game, especially since
+	//	there is literally an option to have them rebuild dynamically
+	//	in the editor, but here we are in reality...
+	pc->ConsoleCommand(TEXT("RebuildNavigation"));
 	/// DEBUG //////////////////////////////////////
 	///for (auto& actor : currRoomActorSet)
 	///{
@@ -320,6 +351,7 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 	/// ////////////////////////////////////////////
 	//11) if this is the first time the room has been loaded,
 	//	cull enemies to fit the difficulty
+	TSet<AActor*> currRoomActorSet = gs->getCurrentRoomActorSet();
 	if (justLoadedRoom)
 	{
 		///TODO

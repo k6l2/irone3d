@@ -9,6 +9,7 @@
 #include <tuple>
 #include "irone3dGameMode.h"
 const uint8 ULevelMap::ROOM_ARRAY_SIZE = 5;
+const float ULevelMap::ROOM_SIZE = 2500;
 ULevelMap::RoomCoord::RoomCoord(uint8 x, uint8 y)
 	:m_x(x), m_y(y)
 {
@@ -222,7 +223,6 @@ void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 						FName(*uniqueRoomInstanceString), true, true, latentInfo);
 					node.hasBeenVisited = true;
 				}
-				static const float ROOM_SIZE = 2500;
 				const FVector roomLocation(x*ROOM_SIZE, y*ROOM_SIZE, 0);
 				levelStreaming->LevelTransform.SetLocation(roomLocation);
 			}
@@ -275,6 +275,10 @@ TSet<AActor*> ULevelMap::getCurrentRoomActorSet() const
 {
 	const LevelGenNode& currNode = finalLevelLayout[currCoord.y()][currCoord.x()];
 	return TSet<AActor*>{currNode.actorsOwnedByThisRoom};
+}
+FVector ULevelMap::currentRoomWorldOffset() const
+{
+	return FVector{ currCoord.x()*ROOM_SIZE, currCoord.y()*ROOM_SIZE, 0 };
 }
 FString ULevelMap::findLevelDir(const LevelGenNode & node)
 {

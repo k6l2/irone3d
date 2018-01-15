@@ -31,3 +31,7 @@ bool AIrone3dGameState::advanceCurrCoord(const FVector & exitVec)
 {
 	return levelMap->advanceCurrCoord(exitVec);
 }
+FVector AIrone3dGameState::currentRoomWorldOffset() const
+{
+	return levelMap->currentRoomWorldOffset();
+}
