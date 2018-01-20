@@ -142,7 +142,11 @@ float Acreep::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent,
 		particleComp->SetVectorParameter("color", FVector{ 1.f,0.f,0.f });
 	}
 	auto controller = GetController();
-	auto instigatingPawn = EventInstigator->GetPawn();
+	APawn* instigatingPawn = nullptr;
+	if (EventInstigator)
+	{
+		instigatingPawn = EventInstigator->GetPawn();
+	}
 	//UE_LOG(LogTemp, Warning, 
 	//	TEXT("Is it even POSSIBLE? EventInstigator=%p EventInstigator->GetOwner()=%p DamageCauser=%p"),
 	//	(void*)(EventInstigator), (void*)(instigatingActor), (void*)(DamageCauser));
