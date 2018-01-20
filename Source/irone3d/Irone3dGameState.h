@@ -13,7 +13,7 @@ public:
 	FString currentRoomLevelName();
 	FString adjacentRoomLevelName(const FVector& exitVec);
 	void addActorToCurrentRoom(AActor* actor);
-	TSet<AActor*> getCurrentRoomActorSet() const;
+	TArray<TWeakObjectPtr<AActor>> getCurrentRoomActorSet() const;
 	bool advanceCurrCoord(const FVector& exitVec);
 	FVector currentRoomWorldOffset() const;
 private:

@@ -12,6 +12,23 @@
 		that is, which rooms the player has visited and which have not
 	The only instance of this should be handled by the GameState!
  */
+USTRUCT()
+struct FLevelGenNode
+{
+	GENERATED_BODY();
+public:
+	FLevelGenNode();
+	bool hasNorth;
+	bool hasSouth;
+	bool hasEast;
+	bool hasWest;
+	bool hasBeenVisited;
+	FString uniqueLevelName;
+	// AActors need to add themselves to this set of AActors manually
+	//	when they are spawned into the world, most likely via GameState
+	UPROPERTY()
+		TArray<TWeakObjectPtr<AActor>> actorsOwnedByThisRoom;
+};
 UCLASS()
 class IRONE3D_API ULevelMap : public UObject
 {
@@ -39,19 +56,6 @@ private:
 		int32 indexTo;
 		float weight;
 	};
-	struct LevelGenNode
-	{
-		LevelGenNode();
-		bool hasNorth;
-		bool hasSouth;
-		bool hasEast;
-		bool hasWest;
-		bool hasBeenVisited;
-		FString uniqueLevelName;
-		// AActors need to add themselves to this set of AActors manually
-		//	when they are spawned into the world, most likely via GameState
-		TSet<AActor*> actorsOwnedByThisRoom;
-	};
 public:
 	void generateNewLevel(UWorld* world, int8 floorNumber);
 	RoomCoord getStartCoord() const;
@@ -65,17 +69,18 @@ public:
 	// returns a copy of the current room's actor set
 	//	should only be called like 1-2 times during a transition,
 	//	so the performance of the copy/nullify doesn't really matter all that much.
-	TSet<AActor*> getCurrentRoomActorSet() const;
+	TArray<TWeakObjectPtr<AActor>> getCurrentRoomActorSet() const;
 	FVector currentRoomWorldOffset() const;
 private:
-	FString findLevelDir(const LevelGenNode& node);
+	FString findLevelDir(const FLevelGenNode& node);
 	void exitVecToOffsets(const FVector& exitVec, int8& outOffsetX, int8& outOffsetY);
 	/// DEBUG TEST FUNCTION to figure out wtf is going on w/ BSP not 
 	///		getting a world offset
 	UFUNCTION(BlueprintCallable, Category = Transitions)
 		void onStartLevelStreamLoaded();
 private:
-	TArray<TArray<LevelGenNode>> finalLevelLayout;
+	UPROPERTY(VisibleAnywhere, Category=Transitions)
+	TArray<FLevelGenNode> finalLevelLayout;
 	RoomCoord startCoord;
 	RoomCoord currCoord;
 };

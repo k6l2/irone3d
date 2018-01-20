@@ -23,7 +23,7 @@ void AIrone3dGameState::addActorToCurrentRoom(AActor * actor)
 {
 	levelMap->addActorToCurrentRoom(actor);
 }
-TSet<AActor*> AIrone3dGameState::getCurrentRoomActorSet() const
+TArray<TWeakObjectPtr<AActor>> AIrone3dGameState::getCurrentRoomActorSet() const
 {
 	return levelMap->getCurrentRoomActorSet();
 }

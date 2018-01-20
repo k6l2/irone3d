@@ -43,12 +43,19 @@ void Acreep::BeginPlay()
 	Super::BeginPlay();
     if (pawnSense)
     {
-        pawnSense->OnSeePawn.AddDynamic(this, &Acreep::onSeePawn);
+		if (!pawnSense->OnSeePawn.IsAlreadyBound(this, &Acreep::onSeePawn))
+		{
+			pawnSense->OnSeePawn.AddDynamic(this, &Acreep::onSeePawn);
+		}
     }
-	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(
-		this, &Acreep::onOverlapBegin);
-	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(
-		this, &Acreep::onOverlapEnd);
+	if (!GetCapsuleComponent()->OnComponentBeginOverlap.IsAlreadyBound(
+			this, &Acreep::onOverlapBegin))
+	{
+		GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(
+			this, &Acreep::onOverlapBegin);
+		GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(
+			this, &Acreep::onOverlapEnd);
+	}
 	const int32 outlineMaterialIndex = GetMesh()->GetMaterialIndex("materialOutline");
 	const int32 eyesMaterialIndex = GetMesh()->GetMaterialIndex("materialEyes");
 	outlineMaterial = 

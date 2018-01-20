@@ -118,6 +118,20 @@ void Airone3dGameMode::Tick(float deltaSeconds)
 			{
 				//18) unpause all the entities who were spawned from the current room
 				//19) make sure the player can no longer move while the game is paused
+				TArray<TWeakObjectPtr<AActor>> currRoomActorSet = gs->getCurrentRoomActorSet();
+				for (auto& actor : currRoomActorSet)
+				{
+					if (!actor.IsValid())
+					{
+						UE_LOG(LogTemp, Warning,
+							TEXT("actor is invalid, skipping..."))
+						continue;
+					}
+					UE_LOG(LogTemp, Warning,
+						TEXT("setting CustomTimeDilation=1.f for actIt->GetName()=%s"),
+						*actor->GetName())
+						actor->CustomTimeDilation = 1.f;
+				}
 			}
 			else
 			{
@@ -214,9 +228,15 @@ void Airone3dGameMode::startRoomTransition(ARoomTransitionTrigger* trigger)
 		FString::Printf(TEXT("strTransitionLevelCameFrom=%s"), *strTransitionLevelCameFrom));
 	//2 ) pause the game
 	//3 ) make the player able to move while paused
-	TSet<AActor*> currRoomActorSet = gs->getCurrentRoomActorSet();
+	TArray<TWeakObjectPtr<AActor>> currRoomActorSet = gs->getCurrentRoomActorSet();
 	for (auto& actor : currRoomActorSet)
 	{
+		if (!actor.IsValid())
+		{
+			UE_LOG(LogTemp, Warning,
+				TEXT("actor is invalid, skipping..."))
+				continue;
+		}
 		UE_LOG(LogTemp, Warning, 
 			TEXT("setting CustomTimeDilation=0.f for actIt->GetName()=%s"),
 			*actor->GetName())
@@ -351,7 +371,7 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 	/// ////////////////////////////////////////////
 	//11) if this is the first time the room has been loaded,
 	//	cull enemies to fit the difficulty
-	TSet<AActor*> currRoomActorSet = gs->getCurrentRoomActorSet();
+	TArray<TWeakObjectPtr<AActor>> currRoomActorSet = gs->getCurrentRoomActorSet();
 	if (justLoadedRoom)
 	{
 		///TODO
@@ -365,7 +385,13 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 	ARoomTransitionTrigger* triggerEntrance = nullptr;
 	for (auto& actor : currRoomActorSet)
 	{
-		auto checkTrigger = Cast<ARoomTransitionTrigger>(actor);
+		if (!actor.IsValid())
+		{
+			UE_LOG(LogTemp, Warning,
+				TEXT("actor is invalid, skipping..."))
+				continue;
+		}
+		auto checkTrigger = Cast<ARoomTransitionTrigger>(actor.Get());
 		if (!checkTrigger)
 		{
 			continue;

@@ -36,7 +36,7 @@ bool ULevelMap::RoomCoord::operator==(const RoomCoord & other) const
 	//}
 	return std::tie(m_x, m_y) == std::tie(other.m_x, other.m_y);
 }
-ULevelMap::LevelGenNode::LevelGenNode()
+FLevelGenNode::FLevelGenNode()
 	:hasNorth(false)
 	,hasSouth(false)
 	,hasEast(false)
@@ -86,11 +86,7 @@ void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 	// initialize storage container for final level layout data
 	//	to be accumulated during the algorithm
 	finalLevelLayout.Empty();
-	finalLevelLayout.SetNum(ROOM_ARRAY_SIZE);
-	for (int32 y = 0; y < ROOM_ARRAY_SIZE; y++)
-	{
-		finalLevelLayout[y].SetNum(ROOM_ARRAY_SIZE);
-	}
+	finalLevelLayout.SetNum(ROOM_ARRAY_SIZE*ROOM_ARRAY_SIZE);
 	std::set<int32> pickedNodeIndexes;
 	// sort the list of edges based on weight
 	auto edgeWeightSort = [](const LevelGenEdge& a, const LevelGenEdge& b)->bool
@@ -116,37 +112,39 @@ void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 		//list.RemoveAt(index);
 		pickedNodeIndexes.insert(edge.indexFrom);
 		pickedNodeIndexes.insert(edge.indexTo);
-		int32 fromRow = edge.indexFrom / ROOM_ARRAY_SIZE;
-		int32 fromCol = edge.indexFrom % ROOM_ARRAY_SIZE;
-		int32 toRow = edge.indexTo / ROOM_ARRAY_SIZE;
-		int32 toCol = edge.indexTo   % ROOM_ARRAY_SIZE;
-		if (fromRow == toRow)
+		const int32 fromY = edge.indexFrom / ROOM_ARRAY_SIZE;
+		const int32 fromX = edge.indexFrom % ROOM_ARRAY_SIZE;
+		//const int32 fromI = fromX + fromY * ROOM_ARRAY_SIZE;
+		const int32 toY = edge.indexTo / ROOM_ARRAY_SIZE;
+		const int32 toX = edge.indexTo % ROOM_ARRAY_SIZE;
+		//const int32 toI = toX + toY * ROOM_ARRAY_SIZE;
+		if (fromY == toY)
 		{
-			if (fromCol < toCol)
+			if (fromX < toX)
 			{
-				finalLevelLayout[fromRow][fromCol].hasEast = true;
-				finalLevelLayout[toRow][toCol].hasWest = true;
+				finalLevelLayout[edge.indexFrom].hasEast = true;
+				finalLevelLayout[edge.indexTo].hasWest = true;
 			}
 			else
 			{
-				check(fromCol > toCol);
-				finalLevelLayout[fromRow][fromCol].hasWest = true;
-				finalLevelLayout[toRow][toCol].hasEast = true;
+				check(fromX > toX);
+				finalLevelLayout[edge.indexFrom].hasWest = true;
+				finalLevelLayout[edge.indexTo].hasEast = true;
 			}
 		}
 		else
 		{
-			check(fromCol == toCol);
-			if (fromRow < toRow)
+			check(fromX == toX);
+			if (fromY < toY)
 			{
-				finalLevelLayout[fromRow][fromCol].hasSouth = true;
-				finalLevelLayout[toRow][toCol].hasNorth = true;
+				finalLevelLayout[edge.indexFrom].hasSouth = true;
+				finalLevelLayout[edge.indexTo].hasNorth = true;
 			}
 			else
 			{
-				check(fromRow > toRow);
-				finalLevelLayout[fromRow][fromCol].hasNorth = true;
-				finalLevelLayout[toRow][toCol].hasSouth = true;
+				check(fromY > toY);
+				finalLevelLayout[edge.indexFrom].hasNorth = true;
+				finalLevelLayout[edge.indexTo].hasSouth = true;
 			}
 		}
 	};
@@ -191,7 +189,8 @@ void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 	{
 		for (uint8 x = 0; x < ROOM_ARRAY_SIZE; x++)
 		{
-			auto& node = finalLevelLayout[y][x];
+			const int32 i = x + y*ROOM_ARRAY_SIZE;
+			auto& node = finalLevelLayout[i];
 			const RoomCoord rc{ x,y };
 			FString levelDir = findLevelDir(node);
 			// we now should know what type of room to load (levelDir)
@@ -243,14 +242,16 @@ bool ULevelMap::advanceCurrCoord(const FVector & exitVec)
 	exitVecToOffsets(exitVec, offsetX, offsetY);
 	currCoord = RoomCoord{ uint8(currCoord.x() + offsetX), uint8(currCoord.y() + offsetY) };
 	check(currCoord.x() < ROOM_ARRAY_SIZE && currCoord.y() < ROOM_ARRAY_SIZE);
-	LevelGenNode& currNode = finalLevelLayout[currCoord.y()][currCoord.x()];
+	const int32 currI = currCoord.x() + currCoord.y()*ROOM_ARRAY_SIZE;
+	FLevelGenNode& currNode = finalLevelLayout[currI];
 	bool wasPreviouslyVisited = currNode.hasBeenVisited;
 	currNode.hasBeenVisited = true;
 	return !wasPreviouslyVisited;
 }
 FString ULevelMap::currentRoomLevelName()
 {
-	LevelGenNode& currNode = finalLevelLayout[currCoord.y()][currCoord.x()];
+	const int32 currI = currCoord.x() + currCoord.y()*ROOM_ARRAY_SIZE;
+	FLevelGenNode& currNode = finalLevelLayout[currI];
 	return currNode.uniqueLevelName;
 }
 FString ULevelMap::adjacentRoomLevelName(const FVector & exitVec)
@@ -264,23 +265,26 @@ FString ULevelMap::adjacentRoomLevelName(const FVector & exitVec)
 	{
 		return "INVALID-NAME";
 	}
-	return finalLevelLayout[adjacentY][adjacentX].uniqueLevelName;
+	const int32 adjacentI = adjacentX + adjacentY*ROOM_ARRAY_SIZE;
+	return finalLevelLayout[adjacentI].uniqueLevelName;
 }
 void ULevelMap::addActorToCurrentRoom(AActor * actor)
 {
-	LevelGenNode& currNode = finalLevelLayout[currCoord.y()][currCoord.x()];
-	currNode.actorsOwnedByThisRoom.Add(actor);
+	const int32 currI = currCoord.x() + currCoord.y()*ROOM_ARRAY_SIZE;
+	FLevelGenNode& currNode = finalLevelLayout[currI];
+	currNode.actorsOwnedByThisRoom.AddUnique(actor);
 }
-TSet<AActor*> ULevelMap::getCurrentRoomActorSet() const
+TArray<TWeakObjectPtr<AActor>> ULevelMap::getCurrentRoomActorSet() const
 {
-	const LevelGenNode& currNode = finalLevelLayout[currCoord.y()][currCoord.x()];
-	return TSet<AActor*>{currNode.actorsOwnedByThisRoom};
+	const int32 currI = currCoord.x() + currCoord.y()*ROOM_ARRAY_SIZE;
+	const FLevelGenNode& currNode = finalLevelLayout[currI];
+	return TArray<TWeakObjectPtr<AActor>>{currNode.actorsOwnedByThisRoom};
 }
 FVector ULevelMap::currentRoomWorldOffset() const
 {
 	return FVector{ currCoord.x()*ROOM_SIZE, currCoord.y()*ROOM_SIZE, 0 };
 }
-FString ULevelMap::findLevelDir(const LevelGenNode & node)
+FString ULevelMap::findLevelDir(const FLevelGenNode & node)
 {
 	int8 numEdges = 0;
 	if (node.hasNorth) numEdges++;
