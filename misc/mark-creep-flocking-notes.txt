@@ -1,0 +1,41 @@
+so where the hell is the target actor for our stupid flocking shit
+
+use the player's position and deflect it?  that only works if the player position is the dominant factor right?
+
+ok what are the like basic equations we want the behavior to follow/model?
+
+so there's some neighborhood around the creep, and we iterate over the creeps and pick those within the neighborhood who are awake and we destroy reality.
+no actually we average their current velocities? no we really just want to normalize those and average them and use that as part of our direction to move in
+
+and we sort of 'alpha blend' that direction with the direction the player is in and that's our movement direction.  and we can toy with the ratio until we like the behavior, we don't have to gfet it right first try.
+
+so 
+1. the creep ai controller needs to be able to see the list of creeps in the place (the actors, right?)
+2. and somehow understand their current state enough to get a direction vector out of them
+3. and then compute a composite direction vector 
+4. and then use that to set where we want to go.
+
+and #4 is the hard one.
+
+questions:
+	how often can we change the target? both from a performance perspective (they repath every time right? that gives us a giant cpu overhead once we have giant crowds of dudes right?)
+		(but also how often is tick() called and is it often enough for the behavior to look good?)
+	how costly is it to use an extra empty entity to represent the target? we need one for each creep if that's our method. is it feasible for the ai controller to move the target manually?
+		if we move the target manually then we don't have to tell the creep every tick() what its target is. we use unreal magic and rely on it to decide how often to repath.  and hope to not die.
+		what happens if we move the target out of bounds?  does the creep then just fail to move at all, because it can't path?  
+		worse, what if a creep and the player are on the same side of a wall but the target is on the other side so the creep paths away from the player because it flocked through the wall
+		yeah I want an alternative.  I need options.
+	but if we can move a target manually then can we deflect the creep manually and skip having a target at all?
+	
+	what if we have separate behaviors for creeps?
+		like, the one that can see the player kind of leads the way for the other ones, who are just flocking until they see the player (or some of them are asleep or smth)
+		that means that each individual creep is either following the player and therefore doing unreal pathing stuff
+													or is flocking around nearby creeps, maybe with those in the aggro state getting a stronger weight, and does that without touching the pathing stuff
+		and then that gives us a separation, where we don't need any individual creep to mix behaviors or path to a non-player thing
+	
+	well maybe we can do better than that by reading some documentation about how the movement target stuff works
+	
+	
+	
+	
+	kyle say jive one more got damn time (no it's fine I still love you)
