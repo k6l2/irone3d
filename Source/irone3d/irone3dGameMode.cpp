@@ -19,6 +19,7 @@
 #include "RoomTransitionTrigger.h"
 #include "Irone3DPlayer.h"
 #include "Irone3DPlayerController.h"
+#include <Runtime/Engine/Classes/AI/Navigation/NavigationSystem.h>
 const FVector Airone3dGameMode::TRANSITION_CAM_OFFSET = { -110,160,200 };
 const float Airone3dGameMode::LEVEL_TRANSITION_FADE_TIME = 0.75f;
 Airone3dGameMode::Airone3dGameMode()
@@ -360,7 +361,18 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 	//	better way up rebuilding nav meshes in game, especially since
 	//	there is literally an option to have them rebuild dynamically
 	//	in the editor, but here we are in reality...
-	pc->ConsoleCommand(TEXT("RebuildNavigation"));
+	///pc->ConsoleCommand(TEXT("RebuildNavigation"));
+	// So, none of this shit is documented anywhere, and the internet is
+	//	full of forum posts of people trying to figure out how to do this,
+	//	but getting no answers from devs on how to actually do it,
+	//	sOOoo I stepped through the console command for RebuildNavigation
+	//	and came across this function:
+	// void UCheatManager::RebuildNavigation()
+	UNavigationSystem* navSys = UNavigationSystem::GetCurrent(world);
+	if (navSys)
+	{
+		navSys->Build();
+	}
 	/// DEBUG //////////////////////////////////////
 	///for (auto& actor : currRoomActorSet)
 	///{
