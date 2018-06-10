@@ -62,7 +62,9 @@ void Acreep::BeginPlay()
 		GetMesh()->CreateAndSetMaterialInstanceDynamic(outlineMaterialIndex);
 	eyesMaterial = 
 		GetMesh()->CreateAndSetMaterialInstanceDynamic(eyesMaterialIndex);
-	outlineMaterial->GetVectorParameterValue("color", defaultOutlineColor);
+	FMaterialParameterInfo outlineColorInfo;
+	outlineColorInfo.Name = "color";
+	outlineMaterial->GetVectorParameterValue(outlineColorInfo, defaultOutlineColor);
 	//TArray < TArray < FString > > sys;
 	//TArray < TArray < FString > > param;
 	//particleSystemBlood->GetParametersUtilized(sys, param);
