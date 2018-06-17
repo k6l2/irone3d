@@ -1,5 +1,6 @@
 // YOLO SWAG 420
 #pragma once
+#define ECC_EnemyPawn  ECollisionChannel::ECC_GameTraceChannel2
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "creep.generated.h"

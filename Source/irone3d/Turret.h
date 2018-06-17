@@ -16,8 +16,11 @@ public:
 		float pitch() const;
 	UFUNCTION(BlueprintCallable, Category = Animation)
 		bool active() const;
+	UFUNCTION(BlueprintCallable, Category = Animation)
+		void setAnimationActive(bool state);
 	virtual void GetActorEyesViewPoint(
 		FVector& OutLocation, FRotator& OutRotation) const override;
+
 protected:
 	virtual void BeginPlay() override;
 private:
@@ -30,5 +33,8 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, 
 		Category = Combat, meta = (AllowPrivateAccess = "true"))
 		class UPovPawnSensingComponent* pawnSense;
+	UPROPERTY()
+		class APawn* pawnTarget;
 	FVector2D yawVector;
+	bool animationActive;
 };

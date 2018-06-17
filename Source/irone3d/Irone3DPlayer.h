@@ -1,5 +1,6 @@
 // YOLO SWAG 420
 #pragma once
+#define ECC_PlayerPawn ECollisionChannel::ECC_GameTraceChannel1
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Irone3DPlayer.generated.h"

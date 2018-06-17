@@ -1,23 +1,64 @@
 // YOLO SWAG 420
 #include "Turret.h"
 #include "PovPawnSensingComponent.h"
+#include "Irone3DPlayer.h"
 #include <Runtime/Engine/Classes/Components/SkeletalMeshComponent.h>
 #include <Runtime/Engine/Classes/Engine/SkeletalMeshSocket.h>
 //#include <Runtime/AIModule/Classes/Perception/PawnSensingComponent.h>
 #include <EngineGlobals.h>
 #include <Runtime/Engine/Classes/Engine/Engine.h>
+#include <DrawDebugHelpers.h>
 ATurret::ATurret()
 	:skeletalMesh(CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("skeletalMesh")))
 	, pawnSense  (CreateDefaultSubobject<UPovPawnSensingComponent> (TEXT("pawnSense")))
+	, pawnTarget(nullptr)
 	, yawVector(1.f, 0.f)
+	, animationActive(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
 }
 void ATurret::Tick(float deltaSeconds)
 {
-	static const float YAW_PATROL_ROTATION_RATE = 100.f;
-	yawVector = yawVector.GetRotated(
-		YAW_PATROL_ROTATION_RATE*deltaSeconds);
+	const auto* const world = GetWorld();
+	if (!world)
+	{
+		return;
+	}
+	if (active())
+	{
+		FVector  eyesLocation;
+		FRotator eyesRotation;
+		GetActorEyesViewPoint(eyesLocation, eyesRotation);
+		FHitResult hitResult;
+		FCollisionQueryParams queryParams;
+		const FVector traceStart = eyesLocation + GetActorUpVector()*25.f;
+		const FVector traceEnd   = pawnTarget->GetActorLocation();
+		const bool hitSomething = world->LineTraceSingleByProfile(
+			hitResult, traceStart, traceEnd,
+			"IgnoreOnlyEnemy", queryParams);
+		if (hitSomething)
+		{
+			const AActor* const hitActor = hitResult.Actor.Get();
+			if (!hitActor || hitActor != pawnTarget)
+			{
+				///GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+				///	FString::Printf(TEXT("hitActor=\"%s\""), *hitActor->GetName()));
+				pawnTarget = nullptr;
+			}
+			///DrawDebugLine(world, traceStart, traceEnd, FColor::Red);
+		}
+		else
+		{
+			///DrawDebugLine(world, traceStart, traceEnd, FColor::Blue);
+			pawnTarget = nullptr;
+		}
+	}
+	else
+	{
+		static const float YAW_PATROL_ROTATION_RATE = 100.f;
+		yawVector = yawVector.GetRotated(
+			YAW_PATROL_ROTATION_RATE*deltaSeconds);
+	}
 }
 float ATurret::yaw() const
 {
@@ -31,8 +72,11 @@ float ATurret::pitch() const
 }
 bool ATurret::active() const
 {
-	///TODO
-	return false;
+	return pawnTarget != nullptr;
+}
+void ATurret::setAnimationActive(bool state)
+{
+	animationActive = state;
 }
 void ATurret::GetActorEyesViewPoint(
 	FVector& OutLocation, FRotator& OutRotation) const
@@ -65,6 +109,7 @@ void ATurret::BeginPlay()
 }
 void ATurret::onSeePawn(APawn* pawn)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
-		FString::Printf(TEXT("I SEE U!")));
+	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
+	//	FString::Printf(TEXT("I SEE U!")));
+	pawnTarget = pawn;
 }
