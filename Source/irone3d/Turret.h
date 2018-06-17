@@ -18,16 +18,19 @@ public:
 		bool active() const;
 	UFUNCTION(BlueprintCallable, Category = Animation)
 		void setAnimationActive(bool state);
+	UFUNCTION(BlueprintCallable, Category = Animation)
+		void setAnimationInactive(bool state);
 	virtual void GetActorEyesViewPoint(
 		FVector& OutLocation, FRotator& OutRotation) const override;
-
 protected:
 	virtual void BeginPlay() override;
 private:
 	UFUNCTION(Category = Sensory)
 		void onSeePawn(APawn* pawn);
+	void deactivate();
 private:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, 
+	///TODO: make the root component a box, and attach the mesh to it
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,
 		Category = Mesh, meta = (AllowPrivateAccess = "true"))
 		class USkeletalMeshComponent* skeletalMesh;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, 
@@ -37,4 +40,5 @@ private:
 		class APawn* pawnTarget;
 	FVector2D yawVector;
 	bool animationActive;
+	bool animationInactive;
 };

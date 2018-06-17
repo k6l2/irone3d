@@ -4,7 +4,7 @@
 #include "Irone3DPlayer.h"
 #include <Runtime/Engine/Classes/Components/SkeletalMeshComponent.h>
 #include <Runtime/Engine/Classes/Engine/SkeletalMeshSocket.h>
-//#include <Runtime/AIModule/Classes/Perception/PawnSensingComponent.h>
+///#include <Runtime/AIModule/Classes/Perception/PawnSensingComponent.h>
 #include <EngineGlobals.h>
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include <DrawDebugHelpers.h>
@@ -14,6 +14,7 @@ ATurret::ATurret()
 	, pawnTarget(nullptr)
 	, yawVector(1.f, 0.f)
 	, animationActive(false)
+	, animationInactive(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
 }
@@ -43,17 +44,21 @@ void ATurret::Tick(float deltaSeconds)
 			{
 				///GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
 				///	FString::Printf(TEXT("hitActor=\"%s\""), *hitActor->GetName()));
-				pawnTarget = nullptr;
+				deactivate();
 			}
-			///DrawDebugLine(world, traceStart, traceEnd, FColor::Red);
+			DrawDebugLine(world, traceStart, traceEnd, FColor::Red);
 		}
 		else
 		{
 			///DrawDebugLine(world, traceStart, traceEnd, FColor::Blue);
-			pawnTarget = nullptr;
+			deactivate();
+		}
+		if (pawnTarget)
+		{
+			///TODO: rotate yaw & pitch to aim at the target!
 		}
 	}
-	else
+	else if(animationInactive)
 	{
 		static const float YAW_PATROL_ROTATION_RATE = 100.f;
 		yawVector = yawVector.GetRotated(
@@ -77,6 +82,10 @@ bool ATurret::active() const
 void ATurret::setAnimationActive(bool state)
 {
 	animationActive = state;
+}
+void ATurret::setAnimationInactive(bool state)
+{
+	animationInactive = state;
 }
 void ATurret::GetActorEyesViewPoint(
 	FVector& OutLocation, FRotator& OutRotation) const
@@ -109,7 +118,11 @@ void ATurret::BeginPlay()
 }
 void ATurret::onSeePawn(APawn* pawn)
 {
-	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
-	//	FString::Printf(TEXT("I SEE U!")));
+	///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
+	///	FString::Printf(TEXT("I SEE U!")));
 	pawnTarget = pawn;
+}
+void ATurret::deactivate()
+{
+	pawnTarget = nullptr;
 }
