@@ -38,7 +38,7 @@ private:
 		class UPovPawnSensingComponent* pawnSense;
 	UPROPERTY()
 		class APawn* pawnTarget;
-	FVector2D yawVector;
+	FVector aimVector;
 	bool animationActive;
 	bool animationInactive;
 };

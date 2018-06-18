@@ -12,7 +12,6 @@ ATurret::ATurret()
 	:skeletalMesh(CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("skeletalMesh")))
 	, pawnSense  (CreateDefaultSubobject<UPovPawnSensingComponent> (TEXT("pawnSense")))
 	, pawnTarget(nullptr)
-	, yawVector(1.f, 0.f)
 	, animationActive(false)
 	, animationInactive(false)
 {
@@ -46,7 +45,7 @@ void ATurret::Tick(float deltaSeconds)
 				///	FString::Printf(TEXT("hitActor=\"%s\""), *hitActor->GetName()));
 				deactivate();
 			}
-			DrawDebugLine(world, traceStart, traceEnd, FColor::Red);
+			///DrawDebugLine(world, traceStart, traceEnd, FColor::Red);
 		}
 		else
 		{
@@ -55,25 +54,96 @@ void ATurret::Tick(float deltaSeconds)
 		}
 		if (pawnTarget)
 		{
-			///TODO: rotate yaw & pitch to aim at the target!
+			static const float AIM_TO_TARGET_LERP_ALPHA = 0.1f;
+			const FVector toTargetVector = traceEnd - traceStart;
+			/// const FVector toTargetVector = 
+			/// 	GetActorRotation().GetInverse().RotateVector(
+			/// 		traceEnd - traceStart);
+			/// DrawDebugLine(world, traceStart, traceStart + toTargetVector, FColor::Yellow);
+			/// const FTransform actorTransform = GetActorTransform();
+			/// FVector toTargetVector = 
+			/// 	actorTransform.TransformPosition(
+			/// 		traceEnd - traceStart);
+			FRotator newAimRot = FMath::Lerp(
+				aimVector.Rotation(), toTargetVector.Rotation(),
+				AIM_TO_TARGET_LERP_ALPHA);
+			aimVector = newAimRot.Vector();
 		}
 	}
 	else if(animationInactive)
 	{
 		static const float YAW_PATROL_ROTATION_RATE = 100.f;
-		yawVector = yawVector.GetRotated(
-			YAW_PATROL_ROTATION_RATE*deltaSeconds);
+		aimVector = aimVector.RotateAngleAxis(
+			YAW_PATROL_ROTATION_RATE*deltaSeconds,
+			GetActorUpVector());
+		/// DEBUG ///////////////////
+		/// FVector  eyesLocation;
+		/// FRotator eyesRotation;
+		/// GetActorEyesViewPoint(eyesLocation, eyesRotation);
+		/// const FVector traceStart   = eyesLocation + GetActorUpVector()*25.f;
+		/// const FVector traceForward = traceStart + GetActorForwardVector()*100.f;
+		/// const FVector traceUp      = traceStart + GetActorUpVector()*100.f;
+		/// DrawDebugLine(world, traceStart, traceForward, FColor::Red);
+		/// DrawDebugLine(world, traceStart, traceUp, FColor::Blue);
 	}
 }
 float ATurret::yaw() const
 {
-	const float retVal = FMath::Atan2(yawVector.Y, yawVector.X) * 180 / PI;
-	return retVal;
+	// calculate the "right" vector using forwardVector & upVector //
+	const FVector forwardVector = GetActorForwardVector();
+	const FVector upVector = GetActorUpVector();
+	const FVector rightVector = FVector::CrossProduct(
+		forwardVector, upVector);
+	// calculate the aimUpComponent by projecting aim onto upVector //
+	const FVector aimUpComp = aimVector.ProjectOnTo(upVector);
+	// calculate yawVector by subtracting the upComp from aimVec //
+	const FVector yawVector = aimVector - aimUpComp;
+	// calculate |yaw| by finding the angle between yawVector and forwardVector //
+	const float dotProd = FVector::DotProduct(
+		yawVector.GetSafeNormal(), forwardVector);
+	///TODO: handle this edge case (aimVector pointing straight up or down)
+	float yawDegrees = FMath::Acos(dotProd) * 180 / PI;
+	// calculate yaw by using forwardVector cross yawVector //
+	const FVector forwardCrossYaw = FVector::CrossProduct(
+		forwardVector, yawVector);
+	const float dotUpVec = FVector::DotProduct(
+		forwardCrossYaw, upVector);
+	return yawDegrees * (dotUpVec > 0 ? 1.f : -1.f);
 }
 float ATurret::pitch() const
 {
-	///TODO
-	return 0.f;
+	// calculate the "right" vector using aimForwardVector & upVector //
+	const FVector aimForwardVector = 
+		GetActorRotation().RotateVector(
+			FRotator{ 0.f, yaw(), 0.f }.RotateVector(
+				GetActorForwardVector()));
+	const FVector rightVector = FVector::CrossProduct(
+		aimForwardVector, GetActorUpVector());
+	/// DEBUG ///////////////////
+	/// const auto* const world = GetWorld();
+	/// FVector  eyesLocation;
+	/// FRotator eyesRotation;
+	/// GetActorEyesViewPoint(eyesLocation, eyesRotation);
+	/// const FVector traceStart = eyesLocation + GetActorUpVector()*25.f;
+	/// const FVector traceForward = traceStart + forwardVector *100.f;
+	/// const FVector traceUp = traceStart + GetActorUpVector()*100.f;
+	/// DrawDebugLine(world, traceStart, traceForward, FColor::Red);
+	/// /////////////////////////////
+	// calculate aimPerp by projecting aimVector onto the rightVector //
+	const FVector aimPerp = aimVector.ProjectOnTo(rightVector);
+	// calculate pitchVector by subtracting aimPerp from aimVector //
+	const FVector pitchVector = aimVector - aimPerp;
+	///TODO: handle edge case where pitchVector is 0,0,0
+	// calculate |pitch| by measuring the angle between pitchVector and aimForwardVector //
+	const float dotProd = FVector::DotProduct(
+		pitchVector.GetSafeNormal(), aimForwardVector);
+	float pitchDegrees = FMath::Acos(dotProd) * 180 / PI;
+	// calculate pitch by using aimForwardVector cross pitchVector //
+	const FVector forwardCrossPitch = FVector::CrossProduct(
+		aimForwardVector, pitchVector);
+	const float dotRightVec = FVector::DotProduct(
+		forwardCrossPitch, rightVector);
+	return pitchDegrees * (dotRightVec > 0 ? 1.f : -1.f);
 }
 bool ATurret::active() const
 {
@@ -98,6 +168,7 @@ void ATurret::GetActorEyesViewPoint(
 			socketSensor->GetSocketLocation(skeletalMesh);
 		const FRotator sensorRot{ 0.f, yaw(), 0.f };
 		OutLocation = sensorLocation;
+		///TODO: figure out why sensor rot always appears on the X/Y plane?!? (at least for the sensor component it does)
 		OutRotation = sensorRot;
 	}
 	else
@@ -115,6 +186,11 @@ void ATurret::BeginPlay()
 			pawnSense->OnSeePawn.AddDynamic(this, &ATurret::onSeePawn);
 		}
 	}
+	aimVector = GetActorForwardVector();
+	/// GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red,
+	/// 	FString::Printf(TEXT("aimVector=%s"), *aimVector.ToString()));
+	/// GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
+	/// 	FString::Printf(TEXT("upVector=%s"), *GetActorUpVector().ToString()));
 }
 void ATurret::onSeePawn(APawn* pawn)
 {
