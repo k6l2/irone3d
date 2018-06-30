@@ -11,6 +11,8 @@ public:
 	ATurretLaser();
 	virtual void Tick(float DeltaTime) override;
 	void setAim(const FVector& directionNormal);
+protected:
+	virtual void BeginPlay() override;
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, 
 		Category = Components, meta = (AllowPrivateAccess = "true"))
@@ -19,4 +21,5 @@ private:
 		Category = Components, meta = (AllowPrivateAccess = "true"))
 		class UCombatComponent* combatComponent;
 	FVector velocity;
+	FVector spawnLocation;
 };

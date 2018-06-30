@@ -2,6 +2,7 @@
 #include "Turret.h"
 #include "PovPawnSensingComponent.h"
 #include "Irone3DPlayer.h"
+#include "TurretLaser.h"
 #include <Runtime/Engine/Classes/Components/SkeletalMeshComponent.h>
 #include <Runtime/Engine/Classes/Engine/SkeletalMeshSocket.h>
 ///#include <Runtime/AIModule/Classes/Perception/PawnSensingComponent.h>
@@ -9,8 +10,8 @@
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include <DrawDebugHelpers.h>
 ATurret::ATurret()
-	:skeletalMesh(CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("skeletalMesh")))
-	, pawnSense  (CreateDefaultSubobject<UPovPawnSensingComponent> (TEXT("pawnSense")))
+	: skeletalMesh(CreateDefaultSubobject<USkeletalMeshComponent  >(TEXT("skeletalMesh")))
+	, pawnSense   (CreateDefaultSubobject<UPovPawnSensingComponent>(TEXT("pawnSense")))
 	, pawnTarget(nullptr)
 	, cooldown(0.f)
 	, animationActive(false)
@@ -20,7 +21,7 @@ ATurret::ATurret()
 }
 void ATurret::Tick(float deltaSeconds)
 {
-	const auto* const world = GetWorld();
+	auto* const world = GetWorld();
 	if (!world)
 	{
 		return;
@@ -70,7 +71,32 @@ void ATurret::Tick(float deltaSeconds)
 			// if the angle between aimVector and toTargetVector
 			//	is within a certain threshold, then do fire sequence //
 			static const float TARGET_AIM_DEGREES_THRESHOLD = 10.f;
-			///TODO
+			const float aimDotProd = 
+				FVector::DotProduct(aimVector, toTargetVector);
+			const float angleToTarget = FMath::Acos(aimDotProd);
+			if (aimDotProd > 0.f &&
+				angleToTarget < TARGET_AIM_DEGREES_THRESHOLD &&
+				cooldown <= 0.f)
+			{
+				/// GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red,
+				/// 	FString::Printf(TEXT("FIRE!")));
+				// get the world location/rotation of socketBarrel //
+				FVector  barrelLocation;
+				FRotator barrelRot;
+				skeletalMesh->GetSocketWorldLocationAndRotation(
+					"socketBarrel", barrelLocation, barrelRot);
+				//barrelRot.Add(-90.f, 0.f, 0.f);
+				// spawn TurretLaser actor into the world at the barrel position //
+				FActorSpawnParameters projectileParams;
+				ATurretLaser* const laser = world->SpawnActor<ATurretLaser>(
+					projectileClass.Get(),
+					barrelLocation, barrelRot, projectileParams);
+				// Set the laser's aim using the rotation of socketBarrel //
+				laser->setAim(barrelRot.Vector());
+				// prevent lasers from being spammed //
+				static const float LASER_COOLDOWN = 3.f;
+				cooldown = LASER_COOLDOWN;
+			}
 		}
 	}
 	else if(animationInactive)
@@ -204,6 +230,10 @@ void ATurret::onSeePawn(APawn* pawn)
 {
 	///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red,
 	///	FString::Printf(TEXT("I SEE U!")));
+	if (!pawnTarget)
+	{
+		cooldown = 1.f;
+	}
 	pawnTarget = pawn;
 }
 void ATurret::deactivate()
