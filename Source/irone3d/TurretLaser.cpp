@@ -1,27 +1,21 @@
 // YOLO SWAG 420
-
 #include "TurretLaser.h"
-
-
-// Sets default values
+#include "CombatComponent.h"
+#include <Runtime/Engine/Classes/Components/StaticMeshComponent.h>
 ATurretLaser::ATurretLaser()
+	: meshComponent(CreateDefaultSubobject<UStaticMeshComponent>(TEXT("meshComponent")))
+	, combatComponent(CreateDefaultSubobject<UCombatComponent>(TEXT("combatComponent")))
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	RootComponent = meshComponent;
+	combatComponent->SetupAttachment(RootComponent);
 	PrimaryActorTick.bCanEverTick = true;
-
 }
-
-// Called when the game starts or when spawned
-void ATurretLaser::BeginPlay()
-{
-	Super::BeginPlay();
-	
-}
-
-// Called every frame
 void ATurretLaser::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
-
+void ATurretLaser::setAim(const FVector& directionNormal)
+{
+	static const float LASER_SPEED = 100.f;
+	velocity = directionNormal * LASER_SPEED;
+}

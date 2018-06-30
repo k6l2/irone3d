@@ -36,9 +36,13 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, 
 		Category = Combat, meta = (AllowPrivateAccess = "true"))
 		class UPovPawnSensingComponent* pawnSense;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,
+		Category = Combat, meta = (AllowPrivateAccess = "true"))
+		TSubclassOf<class AActor> projectileClass;
 	UPROPERTY()
 		class APawn* pawnTarget;
 	FVector aimVector;
+	float cooldown;
 	bool animationActive;
 	bool animationInactive;
 };

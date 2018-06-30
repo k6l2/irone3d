@@ -12,6 +12,7 @@ ATurret::ATurret()
 	:skeletalMesh(CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("skeletalMesh")))
 	, pawnSense  (CreateDefaultSubobject<UPovPawnSensingComponent> (TEXT("pawnSense")))
 	, pawnTarget(nullptr)
+	, cooldown(0.f)
 	, animationActive(false)
 	, animationInactive(false)
 {
@@ -23,6 +24,10 @@ void ATurret::Tick(float deltaSeconds)
 	if (!world)
 	{
 		return;
+	}
+	if (cooldown > 0.f)
+	{
+		cooldown -= deltaSeconds;
 	}
 	if (active())
 	{
@@ -54,20 +59,18 @@ void ATurret::Tick(float deltaSeconds)
 		}
 		if (pawnTarget)
 		{
+			// smoothly aim towards the target pawn //
 			static const float AIM_TO_TARGET_LERP_ALPHA = 0.1f;
-			const FVector toTargetVector = traceEnd - traceStart;
-			/// const FVector toTargetVector = 
-			/// 	GetActorRotation().GetInverse().RotateVector(
-			/// 		traceEnd - traceStart);
-			/// DrawDebugLine(world, traceStart, traceStart + toTargetVector, FColor::Yellow);
-			/// const FTransform actorTransform = GetActorTransform();
-			/// FVector toTargetVector = 
-			/// 	actorTransform.TransformPosition(
-			/// 		traceEnd - traceStart);
+			const FVector toTargetVector = 
+				(traceEnd - traceStart).GetSafeNormal();
 			FRotator newAimRot = FMath::Lerp(
 				aimVector.Rotation(), toTargetVector.Rotation(),
 				AIM_TO_TARGET_LERP_ALPHA);
 			aimVector = newAimRot.Vector();
+			// if the angle between aimVector and toTargetVector
+			//	is within a certain threshold, then do fire sequence //
+			static const float TARGET_AIM_DEGREES_THRESHOLD = 10.f;
+			///TODO
 		}
 	}
 	else if(animationInactive)
@@ -164,12 +167,17 @@ void ATurret::GetActorEyesViewPoint(
 		skeletalMesh->GetSocketByName("socketPawnSensor") : nullptr;
 	if (socketSensor)
 	{
-		const FVector sensorLocation = 
-			socketSensor->GetSocketLocation(skeletalMesh);
-		const FRotator sensorRot{ 0.f, yaw(), 0.f };
-		OutLocation = sensorLocation;
-		///TODO: figure out why sensor rot always appears on the X/Y plane?!? (at least for the sensor component it does)
-		OutRotation = sensorRot;
+		skeletalMesh->GetSocketWorldLocationAndRotation("socketPawnSensor",
+			OutLocation, OutRotation);
+		/// DEBUG /////////////////////////////////////////////////////////////
+		///TODO: figure out why sensor rot always appears on the X/Y plane?!? 
+		///	(at least for the sensor component it does)
+		/// const auto* const world = GetWorld();
+		/// const FVector traceStart = sensorLocation + GetActorUpVector()*25.f;
+		/// const FVector traceForward = traceStart + sensorRot.Vector() *100.f;
+		/// const FVector traceUp = traceStart + GetActorUpVector()*100.f;
+		/// DrawDebugLine(world, traceStart, traceForward, FColor::Red);
+		/// ///////////////////////////////////////////////////////////////////
 	}
 	else
 	{
