@@ -12,7 +12,8 @@ public class irone3d : ModuleRules
                 "InputCore",
                 //"HeadMountedDisplay",
                 "AIModule",
-                "UMG"
+                "UMG",
+                "ApexDestruction"
             });
     }
 }

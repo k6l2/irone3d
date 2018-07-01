@@ -13,4 +13,18 @@ public:
 protected:
 	virtual void BeginPlay() override;
 private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, 
+		Category = Combat, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* boxComponentRoot;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,
+		Category = BreakableFloor, meta = (AllowPrivateAccess = "true"))
+		class AStaticMeshActor* floorActor;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,
+		Category = BreakableFloor, meta = (AllowPrivateAccess = "true"))
+		TSubclassOf<class ADestructibleActor> destructibleTileClass;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,
+		Category = BreakableFloor, meta = (AllowPrivateAccess = "true"))
+		// when integrity reaches <= 0.f, the floor trap is triggered
+		//	and we destroy the static mesh actor we're on top of
+		float integritySeconds;
 };

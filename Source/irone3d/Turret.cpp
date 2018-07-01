@@ -10,14 +10,17 @@
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include <DrawDebugHelpers.h>
 ATurret::ATurret()
-	: skeletalMesh(CreateDefaultSubobject<USkeletalMeshComponent  >(TEXT("skeletalMesh")))
+	: sceneRoot   (CreateDefaultSubobject<USceneComponent         >(TEXT("sceneRoot")))
+	, skeletalMesh(CreateDefaultSubobject<USkeletalMeshComponent  >(TEXT("skeletalMesh")))
 	, pawnSense   (CreateDefaultSubobject<UPovPawnSensingComponent>(TEXT("pawnSense")))
 	, pawnTarget(nullptr)
 	, cooldown(0.f)
 	, animationActive(false)
 	, animationInactive(false)
 {
-	PrimaryActorTick.bCanEverTick = true;
+	RootComponent = sceneRoot;
+	skeletalMesh->SetupAttachment(RootComponent);
+	//PrimaryActorTick.bCanEverTick = true;
 }
 void ATurret::Tick(float deltaSeconds)
 {
@@ -94,7 +97,7 @@ void ATurret::Tick(float deltaSeconds)
 				// Set the laser's aim using the rotation of socketBarrel //
 				laser->setAim(barrelRot.Vector());
 				// prevent lasers from being spammed //
-				static const float LASER_COOLDOWN = 3.f;
+				static const float LASER_COOLDOWN = 1.5f;
 				cooldown = LASER_COOLDOWN;
 			}
 		}

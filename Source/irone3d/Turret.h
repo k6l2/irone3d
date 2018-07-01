@@ -29,7 +29,9 @@ private:
 		void onSeePawn(APawn* pawn);
 	void deactivate();
 private:
-	///TODO: make the root component a box, and attach the mesh to it
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,
+		Category = Mesh, meta = (AllowPrivateAccess = "true"))
+		class USceneComponent* sceneRoot;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,
 		Category = Mesh, meta = (AllowPrivateAccess = "true"))
 		class USkeletalMeshComponent* skeletalMesh;
