@@ -10,12 +10,17 @@
 #include <DrawDebugHelpers.h>
 #include <DestructibleActor.h>
 #include <DestructibleComponent.h>
+#include <Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h>
+#include <Runtime/Engine/Classes/Components/DecalComponent.h>
 ABreakableFloor::ABreakableFloor()
-	: boxComponentRoot(CreateDefaultSubobject<UBoxComponent>(TEXT("boxComponentRoot")))
+	: boxComponentRoot(CreateDefaultSubobject<UBoxComponent  >(TEXT("boxComponentRoot")))
+	, decalComponent  (CreateDefaultSubobject<UDecalComponent>(TEXT("decalComponent")))
 	, floorActor(nullptr)
 	, integritySeconds(3.f)
+	, decalMaterial(nullptr)
 {
 	RootComponent = boxComponentRoot;
+	decalComponent->SetupAttachment(RootComponent);
 	PrimaryActorTick.bCanEverTick = true;
 }
 void ABreakableFloor::Tick(float DeltaTime)
@@ -51,7 +56,23 @@ void ABreakableFloor::Tick(float DeltaTime)
 			break;
 		}
 	}
-	if (containsStandingPlayer)
+	if (containsStandingPlayer && integritySeconds > 0.f)
+	{
+		integritySeconds -= DeltaTime;
+	}
+	if (integritySeconds > 2.95f)
+	{
+		decalMaterial->SetScalarParameterByIndex(frameParamIndex, 0.f);
+	}
+	else if (integritySeconds > 1.f)
+	{
+		decalMaterial->SetScalarParameterByIndex(frameParamIndex, 1.f);
+	}
+	else
+	{
+		decalMaterial->SetScalarParameterByIndex(frameParamIndex, 2.f);
+	}
+	if (integritySeconds <= 0.f)
 	{
 		// cause the destructible actor to break immediately //
 		const FVector floorActorLocation = floorActor->GetActorLocation();
@@ -68,9 +89,6 @@ void ABreakableFloor::Tick(float DeltaTime)
 		{
 			/// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,
 			/// 	FString::Printf(TEXT("destructible spawned!")));
-			/// destructible->GetDestructibleComponent()->ApplyDamage(
-			/// 	1.f, destructible->GetActorLocation(), 
-			/// 	GetActorUpVector()*-1, 1.f);
 			destructible->GetDestructibleComponent()->ApplyRadiusDamage(
 				100.f, destructible->GetActorLocation(), 250.f, 2500.f, true);
 		}
@@ -114,4 +132,8 @@ void ABreakableFloor::BeginPlay()
 	FVector floorBoxExtent;
 	floorActor->GetActorBounds(true, floorOrigin, floorBoxExtent);
 	boxComponentRoot->SetBoxExtent(floorBoxExtent);
+	// Create a dynamic material instance for the decal //
+	decalMaterial = decalComponent->CreateDynamicMaterialInstance();
+	decalMaterial->InitializeScalarParameterAndGetIndex(
+		"frame", 0, frameParamIndex);
 }

@@ -16,6 +16,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, 
 		Category = Combat, meta = (AllowPrivateAccess = "true"))
 		class UBoxComponent* boxComponentRoot;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,
+		Category = BreakableFloor, meta = (AllowPrivateAccess = "true"))
+		class UDecalComponent* decalComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,
 		Category = BreakableFloor, meta = (AllowPrivateAccess = "true"))
 		class AStaticMeshActor* floorActor;
@@ -27,4 +30,8 @@ private:
 		// when integrity reaches <= 0.f, the floor trap is triggered
 		//	and we destroy the static mesh actor we're on top of
 		float integritySeconds;
+	UPROPERTY()
+		class UMaterialInstanceDynamic* decalMaterial;
+	UPROPERTY()
+		int32 frameParamIndex;
 };
