@@ -19,4 +19,6 @@ public:
 private:
 	UPROPERTY()
 		class ULevelMap* levelMap;
+	UPROPERTY()
+		class UInventory* inventory;
 };

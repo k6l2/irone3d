@@ -34,7 +34,8 @@ public:
 		void setFullscreenTextureColor(const FLinearColor& color);
 	void fadeOut(const FLinearColor& fadeColor, float fadeTime);
 	void fadeIn(const FLinearColor& fadeColor, float fadeTime);
-	// this should only get called by AIrone3DPlayer when they finish auto-moving inside the next room!
+	// this should only get called by AIrone3DPlayer when 
+	//	they finish auto-moving inside the next room!
 	void onEndTransition();
 protected:
 	virtual void BeginPlay() override;
@@ -43,9 +44,11 @@ private:
 	UFUNCTION(BlueprintCallable, Category = Transitions)
 		void onLoadStreamLevelFinished();
 private:
-	UPROPERTY(Category = Widgets, EditDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Category = Widgets, EditDefaultsOnly,
+		BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<class UUserWidget> classHUD;
-	UPROPERTY(Category = Widgets, VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Category = Widgets, VisibleAnywhere,
+		BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		class UUserWidget* widgetHUD;
 	UPROPERTY(VisibleAnywhere, Category = Transitions)
 		ACameraActor* transitionCamera;

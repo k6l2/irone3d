@@ -16,7 +16,7 @@ struct FItemMeta
 {
 	GENERATED_BODY()
 	UPROPERTY(EditAnywhere)
-	ItemType type;
+		ItemType type;
 };
 UCLASS()
 class IRONE3D_API AItem : public AActor
@@ -29,18 +29,24 @@ public:
 protected:
 	virtual void BeginPlay() override;
 private:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
-    class UCapsuleComponent* capsuleComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
-    class UStaticMeshComponent* meshComponent;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = ItemMeshes, meta = (AllowPrivateAccess = "true"))
-	class UStaticMesh* meshHeart;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = ItemMeshes, meta = (AllowPrivateAccess = "true"))
-	class UStaticMesh* meshSword;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = ItemMeshes, meta = (AllowPrivateAccess = "true"))
-	class UStaticMesh* meshBoot;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = ItemMeshes, meta = (AllowPrivateAccess = "true"))
-	class UStaticMesh* meshKey;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, 
+		Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UCapsuleComponent* capsuleComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, 
+		Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UStaticMeshComponent* meshComponent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, 
+		Category = ItemMeshes, meta = (AllowPrivateAccess = "true"))
+		class UStaticMesh* meshHeart;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, 
+		Category = ItemMeshes, meta = (AllowPrivateAccess = "true"))
+		class UStaticMesh* meshSword;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, 
+		Category = ItemMeshes, meta = (AllowPrivateAccess = "true"))
+		class UStaticMesh* meshBoot;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, 
+		Category = ItemMeshes, meta = (AllowPrivateAccess = "true"))
+		class UStaticMesh* meshKey;
 	UPROPERTY(EditDefaultsOnly, Category = Meta)
-	FItemMeta itemMeta;
+		FItemMeta itemMeta;
 };

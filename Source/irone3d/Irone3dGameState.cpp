@@ -1,8 +1,10 @@
 // YOLO SWAG 420
 #include "Irone3dGameState.h"
 #include "LevelMap.h"
+#include "Inventory.h"
 AIrone3dGameState::AIrone3dGameState()
-	:levelMap(CreateDefaultSubobject<ULevelMap>(TEXT("levelMap")))
+	: levelMap (CreateDefaultSubobject<ULevelMap >(TEXT("levelMap")))
+	, inventory(CreateDefaultSubobject<UInventory>(TEXT("inventory")))
 {
 }
 void AIrone3dGameState::generateLevelMap(UWorld* world)
