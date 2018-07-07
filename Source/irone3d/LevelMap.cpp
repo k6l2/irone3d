@@ -310,7 +310,7 @@ bool ULevelMap::hasExitWest(const RoomCoord& coord) const
 	const int32 roomI = coord.x() + coord.y() * ROOM_ARRAY_SIZE;
 	return finalLevelLayout[roomI].hasWest;
 }
-int8 ULevelMap::getFloorNumber() const
+int ULevelMap::getFloorNumber() const
 {
 	return floorNumber;
 }

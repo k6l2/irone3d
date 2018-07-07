@@ -174,8 +174,9 @@ void AIrone3DPlayer::updateAttackAnimationProgress(float value)
 void AIrone3DPlayer::BeginPlay()
 {
 	Super::BeginPlay();
-    dynMaterialSlash = meshAttack->CreateAndSetMaterialInstanceDynamicFromMaterial(
-        0, meshAttack->GetMaterial(0));
+    dynMaterialSlash = 
+		meshAttack->CreateAndSetMaterialInstanceDynamicFromMaterial(
+			0, meshAttack->GetMaterial(0));
 }
 void AIrone3DPlayer::Tick(float DeltaTime)
 {

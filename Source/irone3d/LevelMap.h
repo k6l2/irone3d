@@ -76,7 +76,8 @@ public:
 	bool hasExitEast (const RoomCoord& coord) const;
 	bool hasExitSouth(const RoomCoord& coord) const;
 	bool hasExitWest (const RoomCoord& coord) const;
-	int8 getFloorNumber() const;
+	UFUNCTION(BlueprintCallable, Category = LevelMap)
+		int getFloorNumber() const;
 private:
 	FString findLevelDir(const FLevelGenNode& node);
 	void exitVecToOffsets(const FVector& exitVec,
