@@ -37,3 +37,7 @@ FVector AIrone3dGameState::currentRoomWorldOffset() const
 {
 	return levelMap->currentRoomWorldOffset();
 }
+class ULevelMap* AIrone3dGameState::getLevelMap() const
+{
+	return levelMap;
+}

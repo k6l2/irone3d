@@ -29,7 +29,7 @@ public:
 	UPROPERTY()
 		TArray<TWeakObjectPtr<AActor>> actorsOwnedByThisRoom;
 };
-UCLASS()
+UCLASS(BlueprintType)
 class IRONE3D_API ULevelMap : public UObject
 {
 	GENERATED_BODY()
@@ -66,14 +66,21 @@ public:
 	FString currentRoomLevelName();
 	FString adjacentRoomLevelName(const FVector& exitVec);
 	void addActorToCurrentRoom(AActor* actor);
-	// returns a copy of the current room's actor set
-	//	should only be called like 1-2 times during a transition,
-	//	so the performance of the copy/nullify doesn't really matter all that much.
+	// returns a copy of the current room's actor set should only be called
+	//	like 1-2 times during a transition, so the performance of the 
+	//	copy/nullify doesn't really matter all that much.
 	TArray<TWeakObjectPtr<AActor>> getCurrentRoomActorSet() const;
 	FVector currentRoomWorldOffset() const;
+	bool isVisited(const RoomCoord& coord) const;
+	bool hasExitNorth(const RoomCoord& coord) const;
+	bool hasExitEast (const RoomCoord& coord) const;
+	bool hasExitSouth(const RoomCoord& coord) const;
+	bool hasExitWest (const RoomCoord& coord) const;
+	int8 getFloorNumber() const;
 private:
 	FString findLevelDir(const FLevelGenNode& node);
-	void exitVecToOffsets(const FVector& exitVec, int8& outOffsetX, int8& outOffsetY);
+	void exitVecToOffsets(const FVector& exitVec,
+		int8& outOffsetX, int8& outOffsetY) const;
 	/// DEBUG TEST FUNCTION to figure out wtf is going on w/ BSP not 
 	///		getting a world offset
 	UFUNCTION(BlueprintCallable, Category = Transitions)
@@ -83,4 +90,5 @@ private:
 	TArray<FLevelGenNode> finalLevelLayout;
 	RoomCoord startCoord;
 	RoomCoord currCoord;
+	int8 floorNumber;
 };

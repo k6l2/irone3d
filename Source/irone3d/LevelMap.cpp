@@ -47,6 +47,7 @@ FLevelGenNode::FLevelGenNode()
 }
 void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 {
+	this->floorNumber = floorNumber;
 	// this custom game mode or a similar blueprinted class is needed
 	//	in order to call the stupid createLevelInstance function
 	auto gm = world->GetAuthGameMode<Airone3dGameMode>();
@@ -284,6 +285,35 @@ FVector ULevelMap::currentRoomWorldOffset() const
 {
 	return FVector{ currCoord.x()*ROOM_SIZE, currCoord.y()*ROOM_SIZE, 0 };
 }
+bool ULevelMap::isVisited(const RoomCoord& coord) const
+{
+	const int32 roomI = coord.x() + coord.y() * ROOM_ARRAY_SIZE;
+	return finalLevelLayout[roomI].hasBeenVisited;
+}
+bool ULevelMap::hasExitNorth(const RoomCoord& coord) const
+{
+	const int32 roomI = coord.x() + coord.y() * ROOM_ARRAY_SIZE;
+	return finalLevelLayout[roomI].hasNorth;
+}
+bool ULevelMap::hasExitEast(const RoomCoord& coord) const
+{
+	const int32 roomI = coord.x() + coord.y() * ROOM_ARRAY_SIZE;
+	return finalLevelLayout[roomI].hasEast;
+}
+bool ULevelMap::hasExitSouth(const RoomCoord& coord) const
+{
+	const int32 roomI = coord.x() + coord.y() * ROOM_ARRAY_SIZE;
+	return finalLevelLayout[roomI].hasSouth;
+}
+bool ULevelMap::hasExitWest(const RoomCoord& coord) const
+{
+	const int32 roomI = coord.x() + coord.y() * ROOM_ARRAY_SIZE;
+	return finalLevelLayout[roomI].hasWest;
+}
+int8 ULevelMap::getFloorNumber() const
+{
+	return floorNumber;
+}
 FString ULevelMap::findLevelDir(const FLevelGenNode & node)
 {
 	int8 numEdges = 0;
@@ -367,7 +397,8 @@ FString ULevelMap::findLevelDir(const FLevelGenNode & node)
 	}
 	return levelDir;
 }
-void ULevelMap::exitVecToOffsets(const FVector & exitVec, int8 & outOffsetX, int8 & outOffsetY)
+void ULevelMap::exitVecToOffsets(const FVector & exitVec,
+	int8 & outOffsetX, int8 & outOffsetY) const
 {
 	outOffsetX = outOffsetY = 0;
 	if (FMath::Abs(exitVec.X) > FMath::Abs(exitVec.Y))

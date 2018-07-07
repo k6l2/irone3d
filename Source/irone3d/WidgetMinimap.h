@@ -9,7 +9,8 @@ class IRONE3D_API UWidgetMinimap : public UUserWidget
 	GENERATED_BODY()
 public:
 	UWidgetMinimap(const FObjectInitializer & ObjectInitializer);
-	void updateMinimap(const class LevelMap& levelMap);
+	UFUNCTION(BlueprintCallable, Category = Minimap)
+		void updateMinimap(const class ULevelMap* const levelMap);
 protected:
 	UFUNCTION(BlueprintCallable, Category = Minimap)
 		void setGridPanel(class UUniformGridPanel* gp);
@@ -19,4 +20,6 @@ private:
 		TSubclassOf<class UWidgetMinimapSquare> minimapSquareWidgetClass;
 	UPROPERTY()
 		class UUniformGridPanel* gridPanel;
+	UPROPERTY()
+		TArray<class UWidgetMinimapSquare*> gridSquares;
 };

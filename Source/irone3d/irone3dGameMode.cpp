@@ -76,6 +76,7 @@ void Airone3dGameMode::InitGameState()
 		return;
 	}
 	gs->generateLevelMap(world);
+	updateMinimapWidget(gs->getLevelMap());
 }
 void Airone3dGameMode::StartPlay()
 {
@@ -138,6 +139,7 @@ void Airone3dGameMode::Tick(float deltaSeconds)
 			{
 				//9 ) set the new room's "hasBeenVisited" flag
 				justLoadedRoom = gs->advanceCurrCoord(exitVec);
+				updateMinimapWidget(gs->getLevelMap());
 				//10) Load the destination level
 				FLatentActionInfo latentInfo;
 				latentInfo.CallbackTarget = this;

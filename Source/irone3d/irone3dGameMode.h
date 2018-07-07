@@ -32,6 +32,8 @@ public:
 			const FString& uniqueInstanceName);
 	UFUNCTION(BlueprintImplementableEvent)
 		void setFullscreenTextureColor(const FLinearColor& color);
+	UFUNCTION(BlueprintImplementableEvent)
+		void updateMinimapWidget(const ULevelMap* const levelMap);
 	void fadeOut(const FLinearColor& fadeColor, float fadeTime);
 	void fadeIn(const FLinearColor& fadeColor, float fadeTime);
 	// this should only get called by AIrone3DPlayer when 

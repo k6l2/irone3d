@@ -16,6 +16,7 @@ public:
 	TArray<TWeakObjectPtr<AActor>> getCurrentRoomActorSet() const;
 	bool advanceCurrCoord(const FVector& exitVec);
 	FVector currentRoomWorldOffset() const;
+	class ULevelMap* getLevelMap() const;
 private:
 	UPROPERTY()
 		class ULevelMap* levelMap;
