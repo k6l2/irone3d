@@ -41,3 +41,7 @@ class ULevelMap* AIrone3dGameState::getLevelMap() const
 {
 	return levelMap;
 }
+class UInventory* AIrone3dGameState::getInventory() const
+{
+	return inventory;
+}

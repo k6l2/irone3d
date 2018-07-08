@@ -3,8 +3,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Item.generated.h"
-UENUM()
-enum class ItemType : int8
+UENUM(BlueprintType)
+enum class ItemType : uint8
 {
 	HEART,
 	SWORD,
@@ -29,6 +29,12 @@ public:
 protected:
 	virtual void BeginPlay() override;
 private:
+	UFUNCTION(Category = Callbacks)
+		void onOverlapBegin(UPrimitiveComponent * OverlappedComponent,
+			AActor * OtherActor, UPrimitiveComponent * OtherComp,
+			int32 OtherBodyIndex, bool bFromSweep,
+			const FHitResult & SweepResult);
+private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, 
 		Category = Components, meta = (AllowPrivateAccess = "true"))
 		class UCapsuleComponent* capsuleComponent;
@@ -47,6 +53,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, 
 		Category = ItemMeshes, meta = (AllowPrivateAccess = "true"))
 		class UStaticMesh* meshKey;
-	UPROPERTY(EditDefaultsOnly, Category = Meta)
+	UPROPERTY(EditAnywhere, Category = Meta)
 		FItemMeta itemMeta;
 };

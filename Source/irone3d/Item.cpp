@@ -1,7 +1,13 @@
 // YOLO SWAG 420
 #include "Item.h"
+#include "Irone3DPlayer.h"
+#include "Irone3dGameState.h"
+#include "Inventory.h"
 #include "Runtime/Engine/Classes/Components/StaticMeshComponent.h"
 #include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
+#include <Runtime/Engine/Classes/Engine/World.h>
+#include <EngineGlobals.h>
+#include <Runtime/Engine/Classes/Engine/Engine.h>
 AItem::AItem()
 	:capsuleComponent(CreateDefaultSubobject<UCapsuleComponent>(TEXT("capsule")))
 	,meshComponent(CreateDefaultSubobject<UStaticMeshComponent>(TEXT("mesh")))
@@ -41,4 +47,32 @@ void AItem::BeginPlay()
 {
 	Super::BeginPlay();
 	setMeta(itemMeta);
+	if (!capsuleComponent->OnComponentBeginOverlap.IsAlreadyBound(
+		this, &AItem::onOverlapBegin))
+	{
+		capsuleComponent->OnComponentBeginOverlap.AddDynamic(
+			this, &AItem::onOverlapBegin);
+	}
+}
+void AItem::onOverlapBegin(UPrimitiveComponent * OverlappedComponent,
+	AActor * OtherActor, UPrimitiveComponent * OtherComp,
+	int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+{
+	UWorld* world = GetWorld();
+	check(world);
+	if (!world)
+	{
+		return;
+	}
+	AIrone3dGameState* gs = world->GetGameState<AIrone3dGameState>();
+	check(gs);
+	if (!gs)
+	{
+		return;
+	}
+	if(OtherComp->IsA(UCapsuleComponent::StaticClass()))
+	{
+		gs->getInventory()->addItem(itemMeta.type);
+		Destroy();
+	}
 }

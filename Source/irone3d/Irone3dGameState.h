@@ -17,6 +17,7 @@ public:
 	bool advanceCurrCoord(const FVector& exitVec);
 	FVector currentRoomWorldOffset() const;
 	class ULevelMap* getLevelMap() const;
+	class UInventory* getInventory() const;
 private:
 	UPROPERTY()
 		class ULevelMap* levelMap;

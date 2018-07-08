@@ -34,6 +34,8 @@ public:
 		void setFullscreenTextureColor(const FLinearColor& color);
 	UFUNCTION(BlueprintImplementableEvent)
 		void updateMinimapWidget(const ULevelMap* const levelMap);
+	UFUNCTION(BlueprintImplementableEvent)
+		void updateInventoryWidgets(const UInventory* const inventory);
 	void fadeOut(const FLinearColor& fadeColor, float fadeTime);
 	void fadeIn(const FLinearColor& fadeColor, float fadeTime);
 	// this should only get called by AIrone3DPlayer when 
