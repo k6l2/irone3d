@@ -46,18 +46,30 @@ public:
 protected:
 	virtual void BeginPlay() override;
 private:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, meta=(AllowPrivateAccess = "true"))
-		class USpringArmComponent* cameraBoom;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, meta=(AllowPrivateAccess = "true"))
-		class UCameraComponent* camera;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, meta=(AllowPrivateAccess = "true"))
-		class USkeletalMeshComponent* meshCharacter;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, meta=(AllowPrivateAccess = "true"))
-		class UStaticMeshComponent* meshAttack;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, meta=(AllowPrivateAccess = "true"))
-		class UCombatComponent* attackCombatComponent;
+	UFUNCTION()
+		void onCapsuleHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+			UPrimitiveComponent* OtherComp, FVector NormalImpulse,
+			const FHitResult& Hit);
+private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, 
+		meta=(AllowPrivateAccess = "true"))
+			class USpringArmComponent* cameraBoom;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, 
+		meta=(AllowPrivateAccess = "true"))
+			class UCameraComponent* camera;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, 
+		meta=(AllowPrivateAccess = "true"))
+			class USkeletalMeshComponent* meshCharacter;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, 
+		meta=(AllowPrivateAccess = "true"))
+			class UStaticMeshComponent* meshAttack;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, 
+		meta=(AllowPrivateAccess = "true"))
+			class UCombatComponent* attackCombatComponent;
     UPROPERTY()
 		UMaterialInstanceDynamic* dynMaterialSlash;
+	UPROPERTY(EditDefaultsOnly, Category = Player)
+		TSubclassOf<AActor> classLockedDoor;
     float attackAnimationProgress;
     bool hardLanding;
     // canAttack can only be true if we're in idle/walk/run state

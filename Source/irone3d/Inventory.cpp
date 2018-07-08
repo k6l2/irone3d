@@ -42,3 +42,29 @@ void UInventory::addItem(ItemType iType)
 	}
 	gm->updateInventoryWidgets(this);
 }
+bool UInventory::removeItem(ItemType iType)
+{
+	if (!itemCounts.Contains(iType))
+	{
+		return false;
+	}
+	itemCounts.Add(iType, itemCounts[iType] - 1);
+	if (itemCounts[iType] <= 0)
+	{
+		itemCounts.Remove(iType);
+	}
+	UWorld* world = GetWorld();
+	check(world);
+	if (!world)
+	{
+		return false;
+	}
+	Airone3dGameMode* gm = world->GetAuthGameMode<Airone3dGameMode>();
+	check(gm);
+	if (!gm)
+	{
+		return false;
+	}
+	gm->updateInventoryWidgets(this);
+	return true;
+}

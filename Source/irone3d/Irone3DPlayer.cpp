@@ -13,6 +13,8 @@
 #include "CombatComponent.h"
 #include "Irone3DPlayer.h"
 #include "Irone3DPlayerController.h"
+#include "Inventory.h"
+#include "Irone3dGameState.h"
 AIrone3DPlayer::AIrone3DPlayer()
     :cameraBoom(CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom")))
     ,camera(CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera")))
@@ -174,9 +176,36 @@ void AIrone3DPlayer::updateAttackAnimationProgress(float value)
 void AIrone3DPlayer::BeginPlay()
 {
 	Super::BeginPlay();
+	if (!GetCapsuleComponent()->OnComponentHit.IsAlreadyBound(
+		this, &AIrone3DPlayer::onCapsuleHit))
+	{
+		GetCapsuleComponent()->OnComponentHit.AddDynamic(
+			this, &AIrone3DPlayer::onCapsuleHit);
+	}
     dynMaterialSlash = 
 		meshAttack->CreateAndSetMaterialInstanceDynamicFromMaterial(
 			0, meshAttack->GetMaterial(0));
+}
+void AIrone3DPlayer::onCapsuleHit(UPrimitiveComponent* HitComponent, 
+	AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse,
+	const FHitResult& Hit)
+{
+	UWorld* const world = GetWorld();
+	if (!world)
+	{
+		return;
+	}
+	const AIrone3dGameState* const gs = 
+		world->GetGameState<AIrone3dGameState>();
+	if (!gs)
+	{
+		return;
+	}
+	if (OtherActor->IsA(classLockedDoor) &&
+		gs->getInventory()->removeItem(ItemType::KEY))
+	{
+		OtherActor->Destroy();
+	}
 }
 void AIrone3DPlayer::Tick(float DeltaTime)
 {

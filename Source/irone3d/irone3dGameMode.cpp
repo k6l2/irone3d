@@ -143,7 +143,8 @@ void Airone3dGameMode::Tick(float deltaSeconds)
 				//10) Load the destination level
 				FLatentActionInfo latentInfo;
 				latentInfo.CallbackTarget = this;
-				latentInfo.ExecutionFunction = FName("onLoadStreamLevelFinished");
+				latentInfo.ExecutionFunction = 
+					FName("onLoadStreamLevelFinished");
 				latentInfo.Linkage = 1;
 				UGameplayStatics::LoadStreamLevel(world, 
 					FName(*strTransitionLevelGoingTo), true, true, latentInfo);
@@ -388,6 +389,9 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 	TArray<TWeakObjectPtr<AActor>> currRoomActorSet = gs->getCurrentRoomActorSet();
 	if (justLoadedRoom)
 	{
+		///TODO: cull enemies to fit difficulty
+		// If we are adjacent to a boss room, 
+		//	spawn a locked door at the entrance! //
 		///TODO
 	}
     //12) set the player camera to be a certain static location that will

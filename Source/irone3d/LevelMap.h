@@ -18,11 +18,13 @@ struct FLevelGenNode
 	GENERATED_BODY();
 public:
 	FLevelGenNode();
+public:
 	bool hasNorth;
 	bool hasSouth;
 	bool hasEast;
 	bool hasWest;
 	bool hasBeenVisited;
+	///TODO: bool bossRoom;
 	FString uniqueLevelName;
 	// AActors need to add themselves to this set of AActors manually
 	//	when they are spawned into the world, most likely via GameState

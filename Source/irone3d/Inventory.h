@@ -12,6 +12,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Inventory)
 		int32 getItemCount(ItemType iType) const;
 	void addItem(ItemType iType);
+	// returns false if there was no item in the inventory to remove
+	bool removeItem(ItemType iType);
 private:
 	UPROPERTY(VisibleAnywhere, Category = Inventory)
 		TMap<ItemType, uint32> itemCounts;
