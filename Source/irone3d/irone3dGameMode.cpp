@@ -14,12 +14,14 @@
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include <Runtime/Engine/Classes/Kismet/GameplayStatics.h>
 #include <Runtime/Engine/Classes/Engine/LevelStreaming.h>
-#include <Runtime/Engine/Classes/AI/Navigation/NavMeshBoundsVolume.h>
+//#include <Runtime/Engine/Classes/AI/Navigation/NavMeshBoundsVolume.h>
 #include "Irone3dGameState.h"
 #include "RoomTransitionTrigger.h"
 #include "Irone3DPlayer.h"
 #include "Irone3DPlayerController.h"
-#include <Runtime/Engine/Classes/AI/Navigation/NavigationSystem.h>
+//#include <Runtime/Engine/Classes/AI/Navigation/NavigationSystem.h>
+#include <Runtime/NavigationSystem/Public/NavMesh/NavMeshBoundsVolume.h>
+#include <Runtime/NavigationSystem/Public/NavigationSystem.h>
 const FVector Airone3dGameMode::TRANSITION_CAM_OFFSET = { -110,160,200 };
 const float Airone3dGameMode::LEVEL_TRANSITION_FADE_TIME = 0.75f;
 Airone3dGameMode::Airone3dGameMode()
@@ -371,7 +373,7 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 	//	sOOoo I stepped through the console command for RebuildNavigation
 	//	and came across this function:
 	// void UCheatManager::RebuildNavigation()
-	UNavigationSystem* navSys = UNavigationSystem::GetCurrent(world);
+	UNavigationSystemV1* navSys = UNavigationSystemV1::GetCurrent(world);
 	if (navSys)
 	{
 		navSys->Build();
@@ -474,7 +476,7 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 	ULevelStreaming* levelStreaming = UGameplayStatics::GetStreamingLevel(
 		world, FName(*strTransitionLevelCameFrom));
 	check(levelStreaming);
-	levelStreaming->bShouldBeVisible = false;
+	levelStreaming->SetShouldBeVisible(false);
     //17) fade-in from black
 	fadeIn(FLinearColor{ 0,0,0 }, LEVEL_TRANSITION_FADE_TIME);
 }
