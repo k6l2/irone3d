@@ -373,10 +373,16 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 	//	sOOoo I stepped through the console command for RebuildNavigation
 	//	and came across this function:
 	// void UCheatManager::RebuildNavigation()
-	UNavigationSystemV1* navSys = UNavigationSystemV1::GetCurrent(world);
+	UNavigationSystemV1* const navSys = 
+		FNavigationSystem::GetCurrent<UNavigationSystemV1>(world);
 	if (navSys)
 	{
 		navSys->Build();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning,
+			TEXT("Failed to get current navigation system!"));
 	}
 	/// DEBUG //////////////////////////////////////
 	///for (auto& actor : currRoomActorSet)
