@@ -22,5 +22,7 @@ private:
 	UPROPERTY()
 		class ULevelMap* levelMap;
 	UPROPERTY()
+		//Note: Do not put this in GameState... This should be in a custom
+		//	PlayerState class
 		class UInventory* inventory;
 };

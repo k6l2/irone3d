@@ -7,6 +7,7 @@
 #include <Runtime/Engine/Classes/GameFramework/PlayerStart.h>
 #include <set>
 #include <tuple>
+#include <queue>
 #include "irone3dGameMode.h"
 const uint8 ULevelMap::ROOM_ARRAY_SIZE = 5;
 const float ULevelMap::ROOM_SIZE = 2500;
@@ -37,13 +38,27 @@ bool ULevelMap::RoomCoord::operator==(const RoomCoord & other) const
 	return std::tie(m_x, m_y) == std::tie(other.m_x, other.m_y);
 }
 FLevelGenNode::FLevelGenNode()
-	:hasNorth(false)
-	,hasSouth(false)
-	,hasEast(false)
-	,hasWest(false)
-	,hasBeenVisited(false)
-	,uniqueLevelName("UNINITIALIZED-NAME")
+	: hasNorth(false)
+	, hasSouth(false)
+	, hasEast(false)
+	, hasWest(false)
+	, hasBeenVisited(false)
+	, bossRoom(false)
+	, uniqueLevelName("UNINITIALIZED-NAME")
 {
+}
+uint8 FLevelGenNode::exitCount() const
+{
+	uint8 totalExits = 0;
+	if (hasNorth) totalExits++;
+	if (hasSouth) totalExits++;
+	if (hasEast)  totalExits++;
+	if (hasWest)  totalExits++;
+	return totalExits;
+}
+bool FLevelGenNode::hasOneExit() const
+{
+	return exitCount() == 1;
 }
 void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 {
@@ -161,9 +176,9 @@ void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 			auto indexFromIt = pickedNodeIndexes.find(edge.indexFrom);
 			auto indexToIt = pickedNodeIndexes.find(edge.indexTo);
 			if ((indexFromIt == pickedNodeIndexes.end() &&
-				indexToIt != pickedNodeIndexes.end()) ||
+				 indexToIt != pickedNodeIndexes.end()) ||
 				(indexFromIt != pickedNodeIndexes.end() &&
-					indexToIt == pickedNodeIndexes.end()))
+				 indexToIt == pickedNodeIndexes.end()))
 			{
 				adjacentEdges.Add(edge);
 			}
@@ -181,17 +196,160 @@ void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 		//	accumulate a list of edges that have only one pickedNodeIndex
 		accumulateAdjacentEdges();
 	}
-	// at this point, finalLevelLayout contains our minimum spanning tree
-	///TODO: procedurally randomize room types & place a boss room
-	///TODO: procedurally find the starting room
-	startCoord = { 0,0 };
+	// at this point, finalLevelLayout contains our minimum spanning tree /////
+	//-Iterate over each room and locate the rooms with one exit
+	auto locateOneExitRooms = [&]()->TArray<uint16>
+	{
+		TArray<uint16> retVal;
+		for (uint8 y = 0; y < ROOM_ARRAY_SIZE; y++)
+		{
+			for (uint8 x = 0; x < ROOM_ARRAY_SIZE; x++)
+			{
+				const uint16 i = x + y * ROOM_ARRAY_SIZE;
+				auto& node = finalLevelLayout[i];
+				if (node.hasOneExit())
+				{
+					retVal.Push(i);
+				}
+			}
+		}
+		return retVal;
+	};
+	/// //-Brushfire over the finalLevelLayout starting from the leaf nodes and 
+	/// //	accumulate a list of rooms to cull
+	/// std::set<uint16> visitedRoomIndexes;
+	/// std::queue<uint16> qBrushfire;
+	/// std::queue<uint16> qCull;
+	/// for (auto i : oneExitRoomIndexes)
+	/// {
+	/// 	qBrushfire.push(i);
+	/// 	visitedRoomIndexes.insert(i);
+	/// }
+	/// auto getNeighborIndexes = [&](uint16 i)->TArray<uint16>
+	/// {
+	/// 	TArray<uint16> retVal;
+	/// 	const uint8 ix = i % ROOM_ARRAY_SIZE;
+	/// 	const uint8 iy = i / ROOM_ARRAY_SIZE;
+	/// 	auto& iNode = finalLevelLayout[i];
+	/// 	if (iNode.hasNorth) retVal.Push(ix + (iy - 1) * ROOM_ARRAY_SIZE);
+	/// 	if (iNode.hasSouth) retVal.Push(ix + (iy + 1) * ROOM_ARRAY_SIZE);
+	/// 	if (iNode.hasEast)  retVal.Push(ix + 1 + iy * ROOM_ARRAY_SIZE);
+	/// 	if (iNode.hasWest)  retVal.Push(ix - 1 + iy * ROOM_ARRAY_SIZE);
+	/// 	return retVal;
+	/// };
+	/// while (!qBrushfire.empty())
+	/// {
+	/// 	const uint16 nextI = qBrushfire.front();
+	/// 	qBrushfire.pop();
+	/// 	qCull.push(nextI);
+	/// 	// iterate over each neighbor index
+	/// 	//	if the neighbor hasn't been visited yet
+	/// 	//		visit the neighbor
+	/// 	//		add neighbor to the brushfire Q
+	/// 	const TArray<uint16> nextNeighbors = getNeighborIndexes(nextI);
+	/// 	for (uint16 ni : nextNeighbors)
+	/// 	{
+	/// 		if (visitedRoomIndexes.find(ni) != visitedRoomIndexes.end())
+	/// 		{
+	/// 			continue;
+	/// 		}
+	/// 		visitedRoomIndexes.insert(ni);
+	/// 		qBrushfire.push(ni);
+	/// 	}
+	/// }
+	/// // at this point, qCull contains the queue of room indexes to cull
+	//-Cull rooms based on floorNumber using the list
+	static const int NUM_ROOMS_ON_FIRST_FLOOR = 5;
+	const int numRoomsToCull = (ROOM_ARRAY_SIZE*ROOM_ARRAY_SIZE) - 
+		NUM_ROOMS_ON_FIRST_FLOOR - floorNumber;
+	for (int r = 0; r < numRoomsToCull; r++)
+	{
+		TArray<uint16> oneExitRoomIndexes = locateOneExitRooms();
+		if (oneExitRoomIndexes.Num() < 1)
+		{
+			// Should never happen, but JUST IN CASE
+			check(oneExitRoomIndexes.Num() > 0);
+			break;
+		}
+		const uint16 nextCullI = oneExitRoomIndexes[0];
+		auto& cullNode = finalLevelLayout[nextCullI];
+		// to cull a room, we remove all the exits for the room, and then
+		//	iterate over all the adjacent rooms and remove their exits to this
+		//	room
+		cullNode.hasNorth = cullNode.hasEast = cullNode.hasSouth = 
+			cullNode.hasWest = false;
+		const uint8 cullX = nextCullI % ROOM_ARRAY_SIZE;
+		const uint8 cullY = nextCullI / ROOM_ARRAY_SIZE;
+		if (cullX > 0)
+		{
+			const uint16 neighborI = cullX - 1 + cullY * ROOM_ARRAY_SIZE;
+			auto& neighborNode     = finalLevelLayout[neighborI];
+			neighborNode.hasEast   = false;
+		}
+		if (cullX < ROOM_ARRAY_SIZE - 1)
+		{
+			const uint16 neighborI = cullX + 1 + cullY * ROOM_ARRAY_SIZE;
+			auto& neighborNode     = finalLevelLayout[neighborI];
+			neighborNode.hasWest   = false;
+		}
+		if (cullY > 0)
+		{
+			const uint16 neighborI = cullX + (cullY - 1) * ROOM_ARRAY_SIZE;
+			auto& neighborNode     = finalLevelLayout[neighborI];
+			neighborNode.hasSouth  = false;
+		}
+		if (cullY < ROOM_ARRAY_SIZE - 1)
+		{
+			const uint16 neighborI = cullX + (cullY + 1) * ROOM_ARRAY_SIZE;
+			auto& neighborNode     = finalLevelLayout[neighborI];
+			neighborNode.hasNorth  = false;
+		}
+	}
+	//-Iterate over the finalLevelLayout to find the rooms with one exit again
+	TArray<uint16> oneExitRoomIndexes = locateOneExitRooms();
+	//-If there are no 1-exit rooms, choose a random room and remove all but 1 
+	//	exit
+	if (oneExitRoomIndexes.Num() == 0)
+	{
+		///TODO: is this even possible with a min-spanning tree that gets
+		///	culled from the leaves?..
+	}
+	check(oneExitRoomIndexes.Num() > 0);
+	//-Of the remaining rooms with one exit, choose one to be a boss room
+	auto& bossNode = finalLevelLayout[oneExitRoomIndexes[0]];
+	bossNode.bossRoom = true;
+	//-Of the remaining rooms that aren't the boss room, choose one to be the
+	//	starting room
+	// iterate over finalLevelLayout and accumulate a list of rooms that have
+	//	at least ONE exit, and are not a boss room
+	// Then, choose a random room as the start
+	TArray<int32> startCandidateIndexes;
+	for (int32 i = 0; i < finalLevelLayout.Num(); i++)
+	{
+		const auto& node = finalLevelLayout[i];
+		if (node.exitCount() < 1 ||
+			node.bossRoom)
+		{
+			continue;
+		}
+		startCandidateIndexes.Push(i);
+	}
+	check(startCandidateIndexes.Num() > 0);
+	const int32 startI = startCandidateIndexes[
+		FMath::Rand() % startCandidateIndexes.Num()];
+	startCoord = { 
+		uint8(startI%ROOM_ARRAY_SIZE),
+		uint8(startI/ROOM_ARRAY_SIZE) };
 	currCoord = startCoord;
+	// Finally, actually load the Unreal Engine Levels ////////////////////////
 	for (uint8 y = 0; y < ROOM_ARRAY_SIZE; y++)
 	{
 		for (uint8 x = 0; x < ROOM_ARRAY_SIZE; x++)
 		{
 			const int32 i = x + y*ROOM_ARRAY_SIZE;
 			auto& node = finalLevelLayout[i];
+			///DEBUG: reveal entire level with this line
+			///if(node.exitCount() > 0) node.hasBeenVisited = true;
 			const RoomCoord rc{ x,y };
 			FString levelDir = findLevelDir(node);
 			// we now should know what type of room to load (levelDir)
@@ -390,9 +548,8 @@ FString ULevelMap::findLevelDir(const FLevelGenNode & node)
 		}
 		break;
 	case 4:
-		break;
 	default:
-		check(false);
+		// By default, just select a room with all 4 exits, YOLO
 		break;
 	}
 	return levelDir;
