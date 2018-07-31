@@ -430,12 +430,20 @@ FString ULevelMap::adjacentRoomLevelName(const FVector & exitVec)
 void ULevelMap::addActorToCurrentRoom(AActor * actor)
 {
 	const int32 currI = currCoord.x() + currCoord.y()*ROOM_ARRAY_SIZE;
+	if (currI >= finalLevelLayout.Num())
+	{
+		return;
+	}
 	FLevelGenNode& currNode = finalLevelLayout[currI];
 	currNode.actorsOwnedByThisRoom.AddUnique(actor);
 }
 TArray<TWeakObjectPtr<AActor>> ULevelMap::getCurrentRoomActorSet() const
 {
 	const int32 currI = currCoord.x() + currCoord.y()*ROOM_ARRAY_SIZE;
+	if (currI >= finalLevelLayout.Num())
+	{
+		return TArray<TWeakObjectPtr<AActor>>{};
+	}
 	const FLevelGenNode& currNode = finalLevelLayout[currI];
 	return TArray<TWeakObjectPtr<AActor>>{currNode.actorsOwnedByThisRoom};
 }
