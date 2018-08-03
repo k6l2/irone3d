@@ -36,6 +36,8 @@ public:
 		void updateMinimapWidget(const ULevelMap* const levelMap);
 	UFUNCTION(BlueprintImplementableEvent)
 		void updateInventoryWidgets(const UInventory* const inventory);
+	UFUNCTION(BlueprintImplementableEvent)
+		void updateCompassWidget(FVector headingVector);
 	void fadeOut(const FLinearColor& fadeColor, float fadeTime);
 	void fadeIn(const FLinearColor& fadeColor, float fadeTime);
 	// this should only get called by AIrone3DPlayer when 

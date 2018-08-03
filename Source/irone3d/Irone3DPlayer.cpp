@@ -15,6 +15,7 @@
 #include "Irone3DPlayerController.h"
 #include "Inventory.h"
 #include "Irone3dGameState.h"
+#include "irone3dGameMode.h"
 AIrone3DPlayer::AIrone3DPlayer()
     :cameraBoom(CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom")))
     ,camera(CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera")))
@@ -220,6 +221,23 @@ void AIrone3DPlayer::Tick(float DeltaTime)
         dynMaterialSlash->SetScalarParameterValue(
 			"swipeOffset", 0.f);
     }
+	const UWorld* world = GetWorld();
+	if (!world)
+	{
+		return;
+	}
+	AGameModeBase* gmb = world->GetAuthGameMode();
+	if (!gmb)
+	{
+		return;
+	}
+	Airone3dGameMode* gm = Cast<Airone3dGameMode>(gmb);
+	if (!gm)
+	{
+		return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("WTF M8???"));
+	gm->updateCompassWidget(camera->GetForwardVector());
 	// Player animation should be able to tick while the game is paused
 	//	such as during transitions between rooms
 	//meshCharacter->SetTickableWhenPaused(GetTickableWhenPaused());
