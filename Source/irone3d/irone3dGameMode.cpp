@@ -230,8 +230,8 @@ void Airone3dGameMode::startRoomTransition(ARoomTransitionTrigger* trigger)
 	//1 ) Get the FString of the current Level name from GameState
 	//strTransitionLevelCameFrom = UGameplayStatics::GetCurrentLevelName(world);
 	strTransitionLevelCameFrom = gs->currentRoomLevelName();
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-		FString::Printf(TEXT("strTransitionLevelCameFrom=%s"), *strTransitionLevelCameFrom));
+	///GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+	///	FString::Printf(TEXT("strTransitionLevelCameFrom=%s"), *strTransitionLevelCameFrom));
 	//2 ) pause the game
 	//3 ) make the player able to move while paused
 	TArray<TWeakObjectPtr<AActor>> currRoomActorSet = gs->getCurrentRoomActorSet();
@@ -283,8 +283,8 @@ void Airone3dGameMode::startRoomTransition(ARoomTransitionTrigger* trigger)
 	ironePc->transitionExitToLocation(trigger->GetActorLocation() + exitVec * TRANSITION_PLAYER_END_DISTANCE);
 	//7 ) Get the FString of the next Level name from GameState, according to exitVec
 	strTransitionLevelGoingTo = gs->adjacentRoomLevelName(exitVec);
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
-		FString::Printf(TEXT("strTransitionLevelGoingTo=%s"), *strTransitionLevelGoingTo));
+	///GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
+	///	FString::Printf(TEXT("strTransitionLevelGoingTo=%s"), *strTransitionLevelGoingTo));
     //8 ) fade-out to black
 	fadeOut(FLinearColor{ 0,0,0 }, LEVEL_TRANSITION_FADE_TIME);
 	transitioning = true;

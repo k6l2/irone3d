@@ -236,7 +236,7 @@ void AIrone3DPlayer::Tick(float DeltaTime)
 	{
 		return;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("WTF M8???"));
+	///UE_LOG(LogTemp, Warning, TEXT("WTF M8???"));
 	gm->updateCompassWidget(camera->GetForwardVector());
 	// Player animation should be able to tick while the game is paused
 	//	such as during transitions between rooms

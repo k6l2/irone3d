@@ -348,10 +348,12 @@ void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 		{
 			const int32 i = x + y*ROOM_ARRAY_SIZE;
 			auto& node = finalLevelLayout[i];
-			///DEBUG: reveal entire level with this line
-			///if(node.exitCount() > 0) node.hasBeenVisited = true;
+			///DEBUG: reveal entire level with this line //////////////////////
+			if(node.exitCount() > 0) node.hasBeenVisited = true;
+			/// ///////////////////////////////////////////////////////////////
 			const RoomCoord rc{ x,y };
 			FString levelDir = findLevelDir(node);
+			const FQuat levelQuat = findLevelRotation(node);
 			// we now should know what type of room to load (levelDir)
 			//	as well as where we need to put it (r & c)
 			FString roomName = levelDir + FString::FromInt(0);
@@ -359,10 +361,11 @@ void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 			{
 				roomName = levelDir + FString("S");
 			}
-			//UE_LOG(LogTemp, Warning, 
-			//	TEXT("x=%d y=%d roomName='%s'"), x,y, *roomName);
 			const FString uniqueRoomInstanceString =
 				"room" + FString::FromInt(y*ROOM_ARRAY_SIZE + x);
+			UE_LOG(LogTemp, Warning, 
+				TEXT("x=%d y=%d roomName='%s' uniqueRoomInstanceString='%s'"),
+				x,y, *roomName, *uniqueRoomInstanceString);
 			node.uniqueLevelName = uniqueRoomInstanceString;
 			//UE_LOG(LogTemp, Warning, 
 			//	TEXT("uniqueRoomInstanceString='%s'"), *uniqueRoomInstanceString);
@@ -383,6 +386,7 @@ void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
 				}
 				const FVector roomLocation(x*ROOM_SIZE, y*ROOM_SIZE, 0);
 				levelStreaming->LevelTransform.SetLocation(roomLocation);
+				levelStreaming->LevelTransform.SetRotation(levelQuat);
 			}
 		}
 	}
@@ -485,82 +489,97 @@ FString ULevelMap::findLevelDir(const FLevelGenNode & node)
 	int8 numEdges = 0;
 	if (node.hasNorth) numEdges++;
 	if (node.hasSouth) numEdges++;
-	if (node.hasEast) numEdges++;
-	if (node.hasWest) numEdges++;
-	FString levelDir = "/Game/levels/proceduralRooms/NESW/NESW-";
+	if (node.hasEast ) numEdges++;
+	if (node.hasWest ) numEdges++;
+	switch (numEdges)
+	{
+	case 1:
+		return "/Game/levels/proceduralRooms/N/N-";
+	case 2:
+		if ((node.hasNorth && node.hasSouth) ||
+			(node.hasEast && node.hasWest))
+		{
+			return "/Game/levels/proceduralRooms/NS/NS-";
+		}
+		return "/Game/levels/proceduralRooms/NE/NE-";
+	case 3:
+		return "/Game/levels/proceduralRooms/NES/NES-";
+	case 4:
+	default:
+		// By default, just select a room with all 4 exits, YOLO
+		return "/Game/levels/proceduralRooms/NESW/NESW-";
+	}
+}
+FQuat ULevelMap::findLevelRotation(const FLevelGenNode& node)
+{
+	int8 numEdges = 0;
+	if (node.hasNorth) numEdges++;
+	if (node.hasSouth) numEdges++;
+	if (node.hasEast ) numEdges++;
+	if (node.hasWest ) numEdges++;
 	switch (numEdges)
 	{
 	case 1:
 		if (node.hasNorth)
 		{
-			levelDir = "/Game/levels/proceduralRooms/N/N-";
-		}
-		else if (node.hasSouth)
-		{
-			levelDir = "/Game/levels/proceduralRooms/S/S-";
+			return FQuat::Identity;
 		}
 		else if (node.hasEast)
 		{
-			levelDir = "/Game/levels/proceduralRooms/E/E-";
+			return FQuat{ FRotator{0, 90, 0} };
 		}
-		else
+		else if (node.hasSouth)
 		{
-			check(node.hasWest);
-			levelDir = "/Game/levels/proceduralRooms/W/W-";
+			return FQuat{ FRotator{ 0, 180, 0 } };
 		}
-		break;
+		//else node.hasWest
+		return FQuat{ FRotator{ 0, -90, 0 } };
 	case 2:
 		if (node.hasNorth && node.hasSouth)
 		{
-			levelDir = "/Game/levels/proceduralRooms/NS/NS-";
+			return FQuat::Identity;
 		}
 		else if (node.hasEast && node.hasWest)
 		{
-			levelDir = "/Game/levels/proceduralRooms/WE/WE-";
-		}
-		else if (node.hasEast && node.hasSouth)
-		{
-			levelDir = "/Game/levels/proceduralRooms/ES/ES-";
-		}
-		else if (node.hasNorth && node.hasEast)
-		{
-			levelDir = "/Game/levels/proceduralRooms/NE/NE-";
-		}
-		else if (node.hasNorth && node.hasWest)
-		{
-			levelDir = "/Game/levels/proceduralRooms/NW/NW-";
+			return FQuat{ FRotator{ 0, 90, 0 } };
 		}
 		else
 		{
-			check(node.hasSouth && node.hasWest);
-			levelDir = "/Game/levels/proceduralRooms/SW/SW-";
+			if (node.hasNorth && node.hasEast)
+			{
+				return FQuat::Identity;
+			}
+			else if (node.hasEast && node.hasSouth)
+			{
+				return FQuat{ FRotator{ 0, 90, 0 } };
+			}
+			else if (node.hasSouth && node.hasWest)
+			{
+				return FQuat{ FRotator{ 0, 180, 0 } };
+			}
+			//else if (node.hasWest && node.hasNorth)
+			return FQuat{ FRotator{ 0, -90, 0 } };
 		}
 		break;
 	case 3:
-		if (node.hasEast && node.hasSouth && node.hasWest)
+		if (node.hasNorth && node.hasEast && node.hasSouth)
 		{
-			levelDir = "/Game/levels/proceduralRooms/ESW/ESW-";
+			return FQuat::Identity;
 		}
-		else if (node.hasNorth && node.hasEast && node.hasSouth)
+		else if (node.hasEast && node.hasSouth && node.hasWest)
 		{
-			levelDir = "/Game/levels/proceduralRooms/NES/NES-";
+			return FQuat{ FRotator{ 0, 90, 0 } };
 		}
-		else if (node.hasNorth && node.hasEast && node.hasWest)
+		else if (node.hasSouth && node.hasWest && node.hasNorth)
 		{
-			levelDir = "/Game/levels/proceduralRooms/NEW/NEW-";
+			return FQuat{ FRotator{ 0, 180, 0 } };
 		}
-		else
-		{
-			check(node.hasSouth && node.hasWest && node.hasNorth);
-			levelDir = "/Game/levels/proceduralRooms/SWN/SWN-";
-		}
-		break;
+		//else if (node.hasWest && node.hasNorth && node.hasNorth)
+		return FQuat{ FRotator{ 0, -90, 0 } };
 	case 4:
 	default:
-		// By default, just select a room with all 4 exits, YOLO
-		break;
+		return FQuat{ FRotator{ 0, -90.f + 90*FMath::RandRange(0,3), 0 } };
 	}
-	return levelDir;
 }
 void ULevelMap::exitVecToOffsets(const FVector & exitVec,
 	int8 & outOffsetX, int8 & outOffsetY) const

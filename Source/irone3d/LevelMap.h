@@ -84,6 +84,7 @@ public:
 		int getFloorNumber() const;
 private:
 	FString findLevelDir(const FLevelGenNode& node);
+	FQuat findLevelRotation(const FLevelGenNode& node);
 	void exitVecToOffsets(const FVector& exitVec,
 		int8& outOffsetX, int8& outOffsetY) const;
 	/// DEBUG TEST FUNCTION to figure out wtf is going on w/ BSP not 
