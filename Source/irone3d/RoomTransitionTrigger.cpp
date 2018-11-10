@@ -69,7 +69,7 @@ void ARoomTransitionTrigger::onOverlapBegin(UPrimitiveComponent * OverlappedComp
 	{
 		return;
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Orange,
-		FString::Printf(TEXT("TransitionTrigger hit!!!")));
+	///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Orange,
+	///	FString::Printf(TEXT("TransitionTrigger hit!!!")));
 	gm->startRoomTransition(this);
 }
