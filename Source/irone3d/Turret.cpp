@@ -9,6 +9,7 @@
 #include <EngineGlobals.h>
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include <DrawDebugHelpers.h>
+#include "irone3d.h"
 ATurret::ATurret()
 	: sceneRoot   (CreateDefaultSubobject<USceneComponent         >(TEXT("sceneRoot")))
 	, skeletalMesh(CreateDefaultSubobject<USkeletalMeshComponent  >(TEXT("skeletalMesh")))
@@ -42,9 +43,13 @@ void ATurret::Tick(float deltaSeconds)
 		FCollisionQueryParams queryParams;
 		const FVector traceStart = eyesLocation + GetActorUpVector()*25.f;
 		const FVector traceEnd   = pawnTarget->GetActorLocation();
-		const bool hitSomething = world->LineTraceSingleByProfile(
+		///TODO: prevent this line trace hitting turret lasers!
+		const bool hitSomething = world->LineTraceSingleByChannel(
 			hitResult, traceStart, traceEnd,
-			"IgnoreOnlyEnemy", queryParams);
+			ECC_EnemyVision, queryParams);
+		///const bool hitSomething = world->LineTraceSingleByProfile(
+		///	hitResult, traceStart, traceEnd,
+		///	"IgnoreOnlyEnemy", queryParams);
 		if (hitSomething)
 		{
 			const AActor* const hitActor = hitResult.Actor.Get();
