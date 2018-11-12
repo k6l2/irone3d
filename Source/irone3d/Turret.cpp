@@ -43,13 +43,9 @@ void ATurret::Tick(float deltaSeconds)
 		FCollisionQueryParams queryParams;
 		const FVector traceStart = eyesLocation + GetActorUpVector()*25.f;
 		const FVector traceEnd   = pawnTarget->GetActorLocation();
-		///TODO: prevent this line trace hitting turret lasers!
 		const bool hitSomething = world->LineTraceSingleByChannel(
 			hitResult, traceStart, traceEnd,
 			ECC_EnemyVision, queryParams);
-		///const bool hitSomething = world->LineTraceSingleByProfile(
-		///	hitResult, traceStart, traceEnd,
-		///	"IgnoreOnlyEnemy", queryParams);
 		if (hitSomething)
 		{
 			const AActor* const hitActor = hitResult.Actor.Get();
