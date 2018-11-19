@@ -10,10 +10,20 @@ class IRONE3D_API ABoss : public APawn
 public:
 	ABoss();
 	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(
-		class UInputComponent* PlayerInputComponent) override;
+	virtual float TakeDamage(float DamageAmount,
+		FDamageEvent const& DamageEvent, AController * EventInstigator,
+		AActor * DamageCauser) override;
+	UFUNCTION(BlueprintCallable, Category = BossAnimation)
+		float getSpeed2D() const;
+	UFUNCTION(BlueprintCallable, Category = BossAnimation)
+		bool chargingOrb() const;
+	UFUNCTION(BlueprintCallable, Category = BossAnimation)
+		bool isFalling() const;
+	UFUNCTION(BlueprintCallable, Category = BossAnimation)
+		bool isDead() const;
 protected:
 	virtual void BeginPlay() override;
+public:
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components,
 			meta = (AllowPrivateAccess = "true"))
@@ -21,6 +31,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components,
 			meta = (AllowPrivateAccess = "true"))
 		class USkeletalMeshComponent* componentMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, 
+			meta = (AllowPrivateAccess = "true"))
+		class UUnitComponent* componentUnit;
 	UPROPERTY(VisibleAnywhere, Category = Boss)
 		FVector patrolAreaMin;
 	UPROPERTY(VisibleAnywhere, Category = Boss)
@@ -36,12 +49,17 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Boss)
 		bool hoverUp;
 	UPROPERTY(VisibleAnywhere, Category = Boss)
+		bool reachedPatrolLocation;
+	UPROPERTY(VisibleAnywhere, Category = Boss)
+		bool falling;
+	UPROPERTY(EditAnywhere, Category = Boss)
+		bool gravityOn;
+	UPROPERTY(VisibleAnywhere, Category = Boss)
 		FVector velocity;
 	UPROPERTY(VisibleAnywhere, Category = Boss)
 		FVector prevLocation;
 	UPROPERTY(VisibleAnywhere, Category = Boss)
 		TWeakObjectPtr<APawn> targetPawn;
+	UPROPERTY(VisibleAnywhere, Category = Boss)
+		TWeakObjectPtr<class ABossOrb> orb;
 };
-/*
-	IDLE -> Choose new patrol location -> Spawn orb time
-*/

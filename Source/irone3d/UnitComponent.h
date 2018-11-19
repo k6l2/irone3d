@@ -16,7 +16,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "UnitComponent.generated.h"
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUnitHitDelegate, UObject*, attackingObject);
+///DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUnitHitDelegate, UObject*, attackingObject);
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class IRONE3D_API UUnitComponent : public UActorComponent
 {
@@ -25,22 +25,47 @@ public:
 	UUnitComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 		FActorComponentTickFunction* ThisTickFunction) override;
-	// These cannot be hooked to OnComponentBegin/EndOverlap delegates 
-	//	for whatever reason because of some weird binding error
-	void onOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
-		const FHitResult & SweepResult);
-	void onOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	// to use the Unit component, call this function once in the owning Actor's 
+	//	constructor, or if not possible due to the desired vulnerable 
+	//	components not being  initialized in the constructor, call it once in 
+	//	BeginPlay
+	void addVulnerablePrimitiveComponent(UPrimitiveComponent* comp);
+	void setHitpoints(float hp);
+	bool isDead() const;
+	void setDestroyOnDie(bool value);
 protected:
 	virtual void BeginPlay() override;
 private:
+	void bindOverlapsToComponent(UPrimitiveComponent* component);
+	UFUNCTION()
+		void onUnitOverlapBegin(UPrimitiveComponent* OverlappedComponent,
+			AActor* OtherActor, UPrimitiveComponent* OtherComp,
+			int32 OtherBodyIndex, bool bFromSweep,
+			const FHitResult & SweepResult);
+	UFUNCTION()
+		void onUnitOverlapEnd(UPrimitiveComponent* OverlappedComponent,
+			AActor* OtherActor, UPrimitiveComponent* OtherComp,
+			int32 OtherBodyIndex);
 	class UCombatComponent* findCombatComponent(UPrimitiveComponent * otherComp);
 private:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	float hitpoints;
-	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Unit,
+			meta = (AllowPrivateAccess = "true"))
+		float hitpoints;
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, 
+	//		meta = (AllowPrivateAccess = "true"))
 	//float globalHitInvincibleTime;
 	//float globalHitInvincibleTimer;
-	TArray<class UCombatComponent*> collidingCombatComponents;
+	UPROPERTY(VisibleInstanceOnly, Transient, Category = Unit)
+		TArray<class UCombatComponent*> collidingCombatComponents;
+	UPROPERTY(VisibleAnywhere, Category = Unit)
+		TArray<class UPrimitiveComponent*> vulnerableComponents;
+	UPROPERTY(Transient)
+		// This variable is a hack that will allow us to call 
+		//	addVulnerablePrimitiveComponent in BeginPlay instead of the
+		//	Actor's constructor, in case we derive from Character and need to
+		//	add the Character's capsule component to the list of vulnerable 
+		//	components...
+		bool hasBegunPlay = false;
+	UPROPERTY(EditAnywhere, Category = Unit)
+		bool destroyOnDie = true;
 };

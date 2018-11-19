@@ -183,6 +183,12 @@ void AIrone3DPlayer::BeginPlay()
 		GetCapsuleComponent()->OnComponentHit.AddDynamic(
 			this, &AIrone3DPlayer::onCapsuleHit);
 	}
+	///if (!meshAttack->OnComponentBeginOverlap.IsAlreadyBound(
+	///	this, &AIrone3DPlayer::onAttackOverlap))
+	///{
+	///	meshAttack->OnComponentBeginOverlap.AddDynamic(
+	///		this, &AIrone3DPlayer::onAttackOverlap);
+	///}
     dynMaterialSlash = 
 		meshAttack->CreateAndSetMaterialInstanceDynamicFromMaterial(
 			0, meshAttack->GetMaterial(0));
@@ -208,6 +214,13 @@ void AIrone3DPlayer::onCapsuleHit(UPrimitiveComponent* HitComponent,
 		OtherActor->Destroy();
 	}
 }
+///void AIrone3DPlayer::onAttackOverlap(UPrimitiveComponent* OverlappedComponent,
+///	AActor* OtherActor, UPrimitiveComponent* OtherComp,
+///	int32 OtherBodyIndex, bool bFromSweep,
+///	const FHitResult & SweepResult)
+///{
+///	// if the attack is active and it collides with a boss orb, reflect it //
+///}
 void AIrone3DPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);

@@ -41,21 +41,14 @@ bool Acreep::canSee(AActor* actor) const
 void Acreep::BeginPlay()
 {
 	Super::BeginPlay();
-    if (pawnSense)
+	unitComponent->addVulnerablePrimitiveComponent(GetCapsuleComponent());
+	if (pawnSense)
     {
 		if (!pawnSense->OnSeePawn.IsAlreadyBound(this, &Acreep::onSeePawn))
 		{
 			pawnSense->OnSeePawn.AddDynamic(this, &Acreep::onSeePawn);
 		}
     }
-	if (!GetCapsuleComponent()->OnComponentBeginOverlap.IsAlreadyBound(
-			this, &Acreep::onOverlapBegin))
-	{
-		GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(
-			this, &Acreep::onOverlapBegin);
-		GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(
-			this, &Acreep::onOverlapEnd);
-	}
 	const int32 outlineMaterialIndex = GetMesh()->GetMaterialIndex("materialOutline");
 	const int32 eyesMaterialIndex = GetMesh()->GetMaterialIndex("materialEyes");
 	outlineMaterial = 
@@ -79,19 +72,6 @@ void Acreep::BeginPlay()
 		return;
 	}
 	gs->addActorToCurrentRoom(this);
-}
-void Acreep::onOverlapBegin(UPrimitiveComponent * OverlappedComponent, 
-	AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, 
-	bool bFromSweep, const FHitResult & SweepResult)
-{
-	unitComponent->onOverlapBegin(OverlappedComponent,
-		OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-}
-void Acreep::onOverlapEnd(UPrimitiveComponent * OverlappedComponent, 
-	AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex)
-{
-	unitComponent->onOverlapEnd(OverlappedComponent,
-		OtherActor, OtherComp, OtherBodyIndex);
 }
 void Acreep::onSeePawn(APawn * pawn)
 {

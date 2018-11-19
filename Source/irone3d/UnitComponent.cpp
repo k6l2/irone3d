@@ -12,7 +12,7 @@ void UUnitComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	auto const owner = GetOwner();
-	if (!owner)
+	if (!ensure(owner))
 	{
 		return;
 	}
@@ -40,15 +40,41 @@ void UUnitComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		//	damage, hitpoints);
 		FDamageEvent dmgEvent;
 		owner->TakeDamage(damage, dmgEvent, instigator, combatOwner);
-		if (hitpoints <= 0)
+		if (destroyOnDie && hitpoints <= 0)
 		{
 			owner->Destroy();
 		}
+		if (combatComp->destroyOwnerOnDamageDealt())
+		{
+			combatOwner->Destroy();
+		}
 	}
 }
-void UUnitComponent::onOverlapBegin(UPrimitiveComponent * OverlappedComponent, 
-	AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, 
-	bool bFromSweep, const FHitResult & SweepResult)
+void UUnitComponent::addVulnerablePrimitiveComponent(UPrimitiveComponent* comp)
+{
+	if (hasBegunPlay)
+	{
+		bindOverlapsToComponent(comp);
+	}
+	vulnerableComponents.Add(comp);
+}
+void UUnitComponent::setHitpoints(float hp)
+{
+	hitpoints = hp;
+}
+bool UUnitComponent::isDead() const
+{
+	return hitpoints <= 0;
+}
+void UUnitComponent::setDestroyOnDie(bool value)
+{
+	destroyOnDie = value;
+}
+void UUnitComponent::onUnitOverlapBegin(
+	UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex, bool bFromSweep,
+	const FHitResult & SweepResult)
 {
 	//UE_LOG(LogTemp, Warning, TEXT("overlap Begin"));
 	// We need to make sure that othercomp contains a UCombatComponent //
@@ -64,8 +90,9 @@ void UUnitComponent::onOverlapBegin(UPrimitiveComponent * OverlappedComponent,
 		collidingCombatComponents.Add(otherCombatComp);
 	}
 }
-void UUnitComponent::onOverlapEnd(UPrimitiveComponent * OverlappedComponent, 
-	AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex)
+void UUnitComponent::onUnitOverlapEnd(UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex)
 {
 	UCombatComponent* otherCombatComp = findCombatComponent(OtherComp);
 	if (otherCombatComp)
@@ -73,9 +100,25 @@ void UUnitComponent::onOverlapEnd(UPrimitiveComponent * OverlappedComponent,
 		collidingCombatComponents.Remove(otherCombatComp);
 	}
 }
+void UUnitComponent::bindOverlapsToComponent(UPrimitiveComponent* component)
+{
+	if (!component->OnComponentBeginOverlap.IsAlreadyBound(
+		this, &UUnitComponent::onUnitOverlapBegin))
+	{
+		component->OnComponentBeginOverlap.AddDynamic(
+			this, &UUnitComponent::onUnitOverlapBegin);
+		component->OnComponentEndOverlap.AddDynamic(
+			this, &UUnitComponent::onUnitOverlapEnd);
+	}
+}
 void UUnitComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	for (auto comp : vulnerableComponents)
+	{
+		bindOverlapsToComponent(comp);
+	}
+	hasBegunPlay = true;
 }
 UCombatComponent * UUnitComponent::findCombatComponent(UPrimitiveComponent * otherComp)
 {

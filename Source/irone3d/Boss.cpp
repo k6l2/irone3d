@@ -4,12 +4,19 @@
 #include <Runtime/Engine/Classes/Components/SphereComponent.h>
 #include <Runtime/Engine/Classes/Components/SkeletalMeshComponent.h>
 #include <Runtime/Engine/Classes/GameFramework/PlayerController.h>
+#include "BossOrb.h"
+#include "UnitComponent.h"
 ABoss::ABoss()
 	: componentSphere(CreateDefaultSubobject<USphereComponent>(TEXT("sphere")))
 	, componentMesh(CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("mesh")))
+	, componentUnit(CreateDefaultSubobject<UUnitComponent>(TEXT("unit")))
 {
 	RootComponent = componentSphere;
 	componentMesh->SetupAttachment(RootComponent);
+	componentSphere->SetCollisionProfileName("EnemyPawn");
+	componentUnit->addVulnerablePrimitiveComponent(componentSphere);
+	componentUnit->setHitpoints(1);
+	componentUnit->setDestroyOnDie(false);
 	PrimaryActorTick.bCanEverTick = true;
 }
 void ABoss::BeginPlay()
@@ -103,7 +110,11 @@ void ABoss::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	// obtain the target player //
-	const UWorld* const world = GetWorld();
+	UWorld* const world = GetWorld();
+	if (!ensure(world))
+	{
+		return;
+	}
 	FConstPlayerControllerIterator controllerIt =
 		world->GetPlayerControllerIterator();
 	for (; controllerIt; ++controllerIt)
@@ -122,20 +133,27 @@ void ABoss::Tick(float DeltaTime)
 		}
 	}
 	// hover along the Z axis //
-	static const float HOVER_ACCEL = 500.f;
-	static const float HOVER_MAX_SPEED = 100.f;
-	if (((hoverUp  && GetActorLocation().Z > patrolAreaMax.Z) ||
-		 (!hoverUp && GetActorLocation().Z < patrolAreaMin.Z))&&
-		FMath::Abs(velocity.Z) >= HOVER_MAX_SPEED)
+	if (!componentUnit->isDead())
 	{
-		hoverUp = !hoverUp;
+		static const float HOVER_ACCEL = 500.f;
+		static const float HOVER_MAX_SPEED = 100.f;
+		if (((hoverUp  && GetActorLocation().Z > patrolAreaMax.Z) ||
+			 (!hoverUp && GetActorLocation().Z < patrolAreaMin.Z))&&
+			FMath::Abs(velocity.Z) >= HOVER_MAX_SPEED)
+		{
+			hoverUp = !hoverUp;
+		}
+		const float zFloatDir = hoverUp ? 1.f : -1.f;
+		velocity.Z += zFloatDir * HOVER_ACCEL*DeltaTime;
+		velocity.Z = FMath::Clamp(velocity.Z, -HOVER_MAX_SPEED, HOVER_MAX_SPEED);
 	}
-	const float zFloatDir = hoverUp ? 1.f : -1.f;
-	velocity.Z += zFloatDir * HOVER_ACCEL*DeltaTime;
-	velocity.Z = FMath::Clamp(velocity.Z, -HOVER_MAX_SPEED, HOVER_MAX_SPEED);
 	// rotate yaw so we're looking at the target pawn //
 	auto lookAtVector2D = [&](const FVector& dir)
 	{
+		if (componentUnit->isDead())
+		{
+			return;
+		}
 		const float radiansBetween = FMath::Acos(
 			FVector::DotProduct(GetActorForwardVector(), dir));
 		const FVector crossProd =
@@ -193,43 +211,117 @@ void ABoss::Tick(float DeltaTime)
 		}
 	}
 	// AI //
-	if (idleTime <= 0 && chargeOrbTime <= 0 && orbAttackCooldownTime <= 0)
+	if (componentUnit->isDead())
 	{
-		// reset AI timers when they are all depleted
-		idleTime = 3;
-		chargeOrbTime = 1;
-		orbAttackCooldownTime = 3;
+		gravityOn = true;
 	}
-	if (idleTime > 0)
+	else
 	{
-		idleTime -= DeltaTime;
-		if (idleTime <= 0)
+		static const float CHARGE_SECONDS = 2;
+		if (chargeOrbTime <= 0 && orbAttackCooldownTime <= 0)
 		{
-			// choose a new patrol location //
-			// randomly choose a new location and go there //
-			patrolDestination.X = FMath::FRandRange(
-				patrolAreaMin.X, patrolAreaMax.X);
-			patrolDestination.Y = FMath::FRandRange(
-				patrolAreaMin.Y, patrolAreaMax.Y);
+			// reset AI timers when they are all depleted
+			reachedPatrolLocation = false;
+			chargeOrbTime = CHARGE_SECONDS;
+			orbAttackCooldownTime = 3;
 		}
-	}
-	else if (chargeOrbTime > 0)
-	{
-		chargeOrbTime -= DeltaTime;
-		if (chargeOrbTime <= 0)
+		if (chargeOrbTime > 0)
 		{
-			// perform orb launch attack //
+			if (toPatrolLocMag <= 0)
+			{
+				if (!reachedPatrolLocation)
+				{
+					// spawn the orb projectile //
+					FActorSpawnParameters params;
+					params.Owner = this;
+					params.Instigator = this;
+					params.bNoFail = true;
+					FVector orbSpawnPos = GetActorLocation() + 
+						FVector(0, 0, 330);
+					ABossOrb* newOrb = world->SpawnActor<ABossOrb>(
+						orbSpawnPos, FRotator::ZeroRotator, params);
+					newOrb->SetActorScale3D(FVector::ZeroVector);
+					orb = newOrb;
+				}
+				reachedPatrolLocation = true;
+			}
+			if (reachedPatrolLocation)
+			{
+				chargeOrbTime -= DeltaTime;
+				// charge up the orb projectile... //
+				if (auto pOrb = orb.Get())
+				{
+					const float progress = FMath::Min(
+						1.f - (chargeOrbTime / CHARGE_SECONDS), 1.f);
+					pOrb->SetActorScale3D(FVector(1, 1, 1)*progress);
+				}
+			}
+			if (chargeOrbTime <= 0)
+			{
+				// perform orb launch attack //
+				if (auto pOrb = orb.Get())
+				{
+					///pOrb->setVelocity();
+					pOrb->shootAt(targetPawn.Get(), FMath::RandBool());
+				}
+				orb.Reset();
+			}
 		}
-	}
-	else if (orbAttackCooldownTime > 0)
-	{
-		orbAttackCooldownTime -= DeltaTime;
+		else if (orbAttackCooldownTime > 0)
+		{
+			orbAttackCooldownTime -= DeltaTime;
+			if (orbAttackCooldownTime <= 0)
+			{
+				// choose a new patrol location //
+				// randomly choose a new location and go there //
+				patrolDestination.X = FMath::FRandRange(
+					patrolAreaMin.X, patrolAreaMax.X);
+				patrolDestination.Y = FMath::FRandRange(
+					patrolAreaMin.Y, patrolAreaMax.Y);
+			}
+		}
 	}
 	// update actor location due to velocity //
 	prevLocation = GetActorLocation();
-	SetActorLocation(prevLocation + velocity*DeltaTime, true);
+	FHitResult hitResult;
+	falling = true;
+	if (gravityOn)
+	{
+		static const float GRAVITY_ACCEL = 980.665;//cm/sec^2
+		velocity += GetGravityDirection()*GRAVITY_ACCEL*DeltaTime;
+	}
+	SetActorLocation(prevLocation + (velocity*DeltaTime), true, &hitResult);
+	if (hitResult.IsValidBlockingHit())
+	{
+		if (FVector::DotProduct(hitResult.ImpactNormal,
+			GetGravityDirection()) < 0 &&
+			hitResult.GetComponent()->GetCollisionObjectType() == 
+				ECollisionChannel::ECC_WorldStatic)
+		{
+			falling = false;
+		}
+	}
 }
-void ABoss::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+float ABoss::TakeDamage(float DamageAmount,
+	FDamageEvent const& DamageEvent, AController * EventInstigator,
+	AActor * DamageCauser)
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	return Super::TakeDamage(
+		DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+}
+float ABoss::getSpeed2D() const
+{
+	return FVector(velocity.X, velocity.Y, 0).Size();
+}
+bool ABoss::chargingOrb() const
+{
+	return reachedPatrolLocation && chargeOrbTime > 0;
+}
+bool ABoss::isFalling() const
+{
+	return falling;
+}
+bool ABoss::isDead() const
+{
+	return componentUnit->isDead();
 }

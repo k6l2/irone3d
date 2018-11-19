@@ -39,6 +39,14 @@ bool UCombatComponent::isAttackActive() const
 {
 	return attackActive;
 }
+bool UCombatComponent::destroyOwnerOnDamageDealt() const
+{
+	return m_destroyOwnerOnDamageDealt;
+}
+void UCombatComponent::setDestroyOnDealDamage(bool value)
+{
+	m_destroyOwnerOnDamageDealt = value;
+}
 void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();

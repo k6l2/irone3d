@@ -26,11 +26,16 @@ public:
 	bool registerHit(class UUnitComponent* unitComp);
 	void stopAttack();
 	bool isAttackActive() const;
+	bool destroyOwnerOnDamageDealt() const;
+	void setDestroyOnDealDamage(bool value);
 protected:
 	virtual void BeginPlay() override;
 private:
 	bool attackActive;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	float damage;
+	UPROPERTY(EditAnywhere, Category = Combat)
+		bool m_destroyOwnerOnDamageDealt = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, 
+			meta = (AllowPrivateAccess = "true"))
+		float damage;
 	TArray<class UUnitComponent*> hitUnits;
 };
