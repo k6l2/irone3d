@@ -15,6 +15,8 @@ public:
 	void addItem(ItemType iType);
 	// returns false if there was no item in the inventory to remove
 	bool removeItem(ItemType iType);
+	TMap<ItemType, uint32>const& getItemCounts() const;
+	void setItemCounts(TMap<ItemType, uint32>const& counts);
 private:
 	UPROPERTY(VisibleAnywhere, Category = Inventory)
 		TMap<ItemType, uint32> itemCounts;

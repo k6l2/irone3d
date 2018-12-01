@@ -614,10 +614,10 @@ void ULevelMap::exitVecToOffsets(const FVector & exitVec,
 }
 void ULevelMap::onStartLevelStreamLoaded()
 {
-	if (floorNumber == 0)
-	{
-		return;///DEBUG - delete me when done testing
-	}
+	///if (floorNumber == 0)
+	///{
+	///	return;///DEBUG - delete me when done testing
+	///}
 	// Need to set the Player's starting position manually 
 	//	when the first Level is loaded, because the APlayerStart located
 	//	in the starting room & isn't spawned when the player's Pawn is spawned! //

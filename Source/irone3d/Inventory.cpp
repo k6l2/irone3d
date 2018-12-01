@@ -4,6 +4,7 @@
 #include <Runtime/Engine/Classes/Engine/World.h>
 #include <EngineGlobals.h>
 #include <Runtime/Engine/Classes/Engine/Engine.h>
+#include "Irone3DPlayer.h"
 int32 UInventory::getItemCount(ItemType iType) const
 {
 	if (itemCounts.Contains(iType))
@@ -28,18 +29,10 @@ void UInventory::addItem(ItemType iType)
 	/// GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Yellow,
 	/// 	FString::Printf(TEXT("new item count=%i"), getItemCount(iType)));
 	///itemCounts[iType] = getItemCount(iType) + 1;
-	UWorld* world = GetWorld();
-	check(world);
-	if (!world)
-	{
-		return;
-	}
-	Airone3dGameMode* gm = world->GetAuthGameMode<Airone3dGameMode>();
-	check(gm);
-	if (!gm)
-	{
-		return;
-	}
+	UWorld const*const world = GetWorld();
+	ensure(world);
+	Airone3dGameMode*const gm = world->GetAuthGameMode<Airone3dGameMode>();
+	ensure(gm);
 	gm->updateInventoryWidgets(this);
 }
 bool UInventory::removeItem(ItemType iType)
@@ -53,18 +46,23 @@ bool UInventory::removeItem(ItemType iType)
 	{
 		itemCounts.Remove(iType);
 	}
-	UWorld* world = GetWorld();
-	check(world);
-	if (!world)
-	{
-		return false;
-	}
-	Airone3dGameMode* gm = world->GetAuthGameMode<Airone3dGameMode>();
-	check(gm);
-	if (!gm)
-	{
-		return false;
-	}
+	UWorld const*const world = GetWorld();
+	ensure(world);
+	Airone3dGameMode*const gm = world->GetAuthGameMode<Airone3dGameMode>();
+	ensure(gm);
 	gm->updateInventoryWidgets(this);
 	return true;
+}
+TMap<ItemType, uint32>const& UInventory::getItemCounts() const
+{
+	return itemCounts;
+}
+void UInventory::setItemCounts(TMap<ItemType, uint32>const& counts)
+{
+	itemCounts = counts;
+	UWorld const*const world = GetWorld();
+	ensure(world);
+	Airone3dGameMode*const gm = world->GetAuthGameMode<Airone3dGameMode>();
+	ensure(gm);
+	gm->updateInventoryWidgets(this);
 }

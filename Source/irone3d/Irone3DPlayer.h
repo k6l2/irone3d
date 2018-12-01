@@ -10,7 +10,11 @@ class IRONE3D_API AIrone3DPlayer : public ACharacter
 public:
 	AIrone3DPlayer();
 	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void SetupPlayerInputComponent(
+		class UInputComponent* PlayerInputComponent) override;
+	virtual float TakeDamage(float DamageAmount, 
+		FDamageEvent const& DamageEvent, AController * EventInstigator,
+		AActor * DamageCauser) override;
     void moveForward(float value);
     void moveRight(float value);
     void turnRate(float value);
@@ -42,14 +46,16 @@ public:
 		void attackEnd();
     UFUNCTION(BlueprintCallable, Category=Animation)
 		void updateAttackAnimationProgress(float value);
+	UFUNCTION(BlueprintCallable, Category = Player)
+		bool isKilled() const;
 	void copyCameraPropertiesTo(ACameraActor*const otherCam) const;
 protected:
 	virtual void BeginPlay() override;
 private:
 	UFUNCTION()
-		void onCapsuleHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
-			UPrimitiveComponent* OtherComp, FVector NormalImpulse,
-			const FHitResult& Hit);
+		void onCapsuleHit(UPrimitiveComponent* HitComponent,
+			AActor* OtherActor, UPrimitiveComponent* OtherComp,
+			FVector NormalImpulse, const FHitResult& Hit);
 	///UFUNCTION()
 	///	void onAttackOverlap(UPrimitiveComponent* OverlappedComponent,
 	///		AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -57,20 +63,23 @@ private:
 	///		const FHitResult & SweepResult);
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, 
-		meta=(AllowPrivateAccess = "true"))
-			class USpringArmComponent* cameraBoom;
+			meta=(AllowPrivateAccess = "true"))
+		class USpringArmComponent* cameraBoom;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, 
-		meta=(AllowPrivateAccess = "true"))
-			class UCameraComponent* camera;
+			meta=(AllowPrivateAccess = "true"))
+		class UCameraComponent* camera;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, 
-		meta=(AllowPrivateAccess = "true"))
-			class USkeletalMeshComponent* meshCharacter;
+			meta=(AllowPrivateAccess = "true"))
+		class USkeletalMeshComponent* meshCharacter;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, 
-		meta=(AllowPrivateAccess = "true"))
-			class UStaticMeshComponent* meshAttack;
+			meta=(AllowPrivateAccess = "true"))
+		class UStaticMeshComponent* meshAttack;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Components, 
-		meta=(AllowPrivateAccess = "true"))
-			class UCombatComponent* attackCombatComponent;
+			meta=(AllowPrivateAccess = "true"))
+		class UCombatComponent* attackCombatComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components,
+			meta = (AllowPrivateAccess = "true"))
+		class UUnitComponent* unitComponent;
     UPROPERTY()
 		UMaterialInstanceDynamic* dynMaterialSlash;
 	UPROPERTY(EditDefaultsOnly, Category = Player)

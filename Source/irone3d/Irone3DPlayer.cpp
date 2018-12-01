@@ -17,12 +17,15 @@
 #include "Inventory.h"
 #include "Irone3dGameState.h"
 #include "irone3dGameMode.h"
+#include "UnitComponent.h"
+#include "Irone3dGameInstance.h"
 AIrone3DPlayer::AIrone3DPlayer()
     :cameraBoom(CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom")))
     ,camera(CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera")))
     ,meshCharacter(CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshCharacter")))
     ,meshAttack(CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshAttack")))
     ,attackCombatComponent(CreateDefaultSubobject<UCombatComponent>(TEXT("AttackCombat")))
+    ,unitComponent(CreateDefaultSubobject<UUnitComponent>(TEXT("Unit")))
     ,hardLanding(false)
     ,canAttack(false)
     ,tryingAttack(false)
@@ -35,6 +38,7 @@ AIrone3DPlayer::AIrone3DPlayer()
 	meshCharacter->SetupAttachment(RootComponent);
     meshAttack->SetupAttachment(RootComponent);
 	attackCombatComponent->SetupAttachment(meshAttack);
+	unitComponent->setDestroyOnDie(false);
 }
 void AIrone3DPlayer::moveForward(float value)
 {
@@ -70,26 +74,20 @@ void AIrone3DPlayer::moveRight(float value)
 }
 void AIrone3DPlayer::turnRate(float value)
 {
-    auto world = GetWorld();
-    if (!world)
-    {
-        return;
-    }
+	UWorld const*const world = GetWorld();
+	ensure(world);
     AddControllerYawInput(value * world->GetDeltaSeconds());
 }
 void AIrone3DPlayer::lookUpRate(float value)
 {
-    auto world = GetWorld();
-    if (!world)
-    {
-        return;
-    }
+    UWorld const*const world = GetWorld();
+	ensure(world);
     AddControllerPitchInput(value * world->GetDeltaSeconds());
 }
 float AIrone3DPlayer::lateralSpeed() const
 {
     auto movementComp = GetMovementComponent();
-    check(movementComp);
+    ensure(movementComp);
     const float scalarProjection = FVector::DotProduct(
 		movementComp->Velocity, GetActorUpVector());
     const FVector upVelocity = scalarProjection*GetActorUpVector();
@@ -99,7 +97,7 @@ float AIrone3DPlayer::lateralSpeed() const
 float AIrone3DPlayer::verticalSpeed() const
 {
     auto movementComp = GetMovementComponent();
-    check(movementComp);
+    ensure(movementComp);
     const float scalarProjection = FVector::DotProduct(
 		movementComp->Velocity, GetActorUpVector());
     const FVector upVelocity = scalarProjection*GetActorUpVector();
@@ -108,7 +106,7 @@ float AIrone3DPlayer::verticalSpeed() const
 float AIrone3DPlayer::verticalVelocity1D() const
 {
     auto movementComp = GetMovementComponent();
-    check(movementComp);
+    ensure(movementComp);
     const float scalarProjection = FVector::DotProduct(
 		movementComp->Velocity, GetActorUpVector());
     const FVector upVelocity = scalarProjection*GetActorUpVector();
@@ -127,7 +125,7 @@ bool AIrone3DPlayer::isFalling() const
 		}
 	}
     auto movementComp = GetMovementComponent();
-    check(movementComp);
+    ensure(movementComp);
     return movementComp->IsFalling();
 }
 void AIrone3DPlayer::hardLandingStart()
@@ -175,6 +173,15 @@ void AIrone3DPlayer::updateAttackAnimationProgress(float value)
 {
     attackAnimationProgress = value;
 }
+bool AIrone3DPlayer::isKilled() const
+{
+	UWorld* const world = GetWorld();
+	ensure(world);
+	AIrone3dGameState const*const gs =
+		world->GetGameState<AIrone3dGameState>();
+	ensure(gs);
+	return gs->getInventory()->getItemCount(ItemType::HEART) < 1;
+}
 void AIrone3DPlayer::copyCameraPropertiesTo(ACameraActor*const otherCam) const
 {
 	otherCam->SetActorLocation(camera->GetComponentLocation());
@@ -183,18 +190,13 @@ void AIrone3DPlayer::copyCameraPropertiesTo(ACameraActor*const otherCam) const
 void AIrone3DPlayer::BeginPlay()
 {
 	Super::BeginPlay();
+	unitComponent->addVulnerablePrimitiveComponent(GetCapsuleComponent());
 	if (!GetCapsuleComponent()->OnComponentHit.IsAlreadyBound(
 		this, &AIrone3DPlayer::onCapsuleHit))
 	{
 		GetCapsuleComponent()->OnComponentHit.AddDynamic(
 			this, &AIrone3DPlayer::onCapsuleHit);
 	}
-	///if (!meshAttack->OnComponentBeginOverlap.IsAlreadyBound(
-	///	this, &AIrone3DPlayer::onAttackOverlap))
-	///{
-	///	meshAttack->OnComponentBeginOverlap.AddDynamic(
-	///		this, &AIrone3DPlayer::onAttackOverlap);
-	///}
     dynMaterialSlash = 
 		meshAttack->CreateAndSetMaterialInstanceDynamicFromMaterial(
 			0, meshAttack->GetMaterial(0));
@@ -204,16 +206,10 @@ void AIrone3DPlayer::onCapsuleHit(UPrimitiveComponent* HitComponent,
 	const FHitResult& Hit)
 {
 	UWorld* const world = GetWorld();
-	if (!world)
-	{
-		return;
-	}
-	const AIrone3dGameState* const gs = 
+	ensure(world);
+	AIrone3dGameState const*const gs = 
 		world->GetGameState<AIrone3dGameState>();
-	if (!gs)
-	{
-		return;
-	}
+	ensure(gs);
 	if (OtherActor->IsA(classLockedDoor) &&
 		gs->getInventory()->removeItem(ItemType::KEY))
 	{
@@ -230,6 +226,16 @@ void AIrone3DPlayer::onCapsuleHit(UPrimitiveComponent* HitComponent,
 void AIrone3DPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	UWorld const*const world = GetWorld();
+	ensure(world);
+	Airone3dGameMode*const gm = 
+		Cast<Airone3dGameMode>(world->GetAuthGameMode());
+	ensure(gm);
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	ensure(gs);
+	UIrone3dGameInstance*const gi =
+		Cast<UIrone3dGameInstance>(GetGameInstance());
+	ensure(gi);
     if (attackAnimationPlaying)
     {
         dynMaterialSlash->SetScalarParameterValue(
@@ -240,28 +246,37 @@ void AIrone3DPlayer::Tick(float DeltaTime)
         dynMaterialSlash->SetScalarParameterValue(
 			"swipeOffset", 0.f);
     }
-	const UWorld* world = GetWorld();
-	if (!world)
-	{
-		return;
-	}
-	AGameModeBase* gmb = world->GetAuthGameMode();
-	if (!gmb)
-	{
-		return;
-	}
-	Airone3dGameMode* gm = Cast<Airone3dGameMode>(gmb);
-	if (!gm)
-	{
-		return;
-	}
 	///UE_LOG(LogTemp, Warning, TEXT("WTF M8???"));
 	gm->updateCompassWidget(camera->GetForwardVector());
-	// Player animation should be able to tick while the game is paused
-	//	such as during transitions between rooms
-	//meshCharacter->SetTickableWhenPaused(GetTickableWhenPaused());
+	const int32 numHeartsInInventory =
+		gs->getInventory()->getItemCount(ItemType::HEART);
+	unitComponent->setHitpoints(numHeartsInInventory);
+	if (numHeartsInInventory < 1)
+	{
+		///TODO: if we're out of HEARTS, game over
+	}
 }
 void AIrone3DPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+float AIrone3DPlayer::TakeDamage(float DamageAmount,
+	FDamageEvent const& DamageEvent, AController * EventInstigator,
+	AActor * DamageCauser)
+{
+	UWorld const*const world = GetWorld();
+	ensure(world);
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	ensure(gs);
+	// remove HEART items from inventory to the amount of damage //
+	for (float dmg = 0.f; dmg < DamageAmount; dmg += 1.f)
+	{
+		if (!gs->getInventory()->removeItem(ItemType::HEART))
+		{
+			break;
+		}
+	}
+	///TODO: flash effect etc
+	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator,
+		DamageCauser);
 }

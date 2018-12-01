@@ -23,6 +23,8 @@
 #include <Runtime/NavigationSystem/Public/NavMesh/NavMeshBoundsVolume.h>
 #include <Runtime/NavigationSystem/Public/NavigationSystem.h>
 #include "LevelTransitionTrigger.h"
+#include "Irone3dGameInstance.h"
+#include "Inventory.h"
 const FVector Airone3dGameMode::TRANSITION_CAM_OFFSET = { -110,160,200 };
 const float Airone3dGameMode::LEVEL_TRANSITION_FADE_TIME = 0.75f;
 Airone3dGameMode::Airone3dGameMode()
@@ -66,20 +68,16 @@ void Airone3dGameMode::InitGame(const FString & MapName,
 void Airone3dGameMode::InitGameState()
 {
 	Super::InitGameState();
-	auto world = GetWorld();
-	if (!world)
-	{
-		return;
-	}
+	UWorld*const world = GetWorld();
+	ensure(world);
 	// Generate the level map //
-	auto gs = world->GetGameState<AIrone3dGameState>();
-	if (!gs)
-	{
-		UE_LOG(LogTemp, Warning,
-			TEXT("ERROR - could not get world's AIrone3dGameState"));
-		return;
-	}
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	ensure(gs);
 	gs->generateLevelMap(world);
+	UIrone3dGameInstance*const gi = 
+		Cast<UIrone3dGameInstance>(GetGameInstance());
+	ensure(gi);
+	gs->getInventory()->setItemCounts(gi->getItemCounts());
 	updateMinimapWidget(gs->getLevelMap());
 }
 void Airone3dGameMode::StartPlay()
@@ -321,6 +319,12 @@ void Airone3dGameMode::startLevelTransition(ALevelTransitionTrigger* trigger)
 	player->copyCameraPropertiesTo(transitionCamera);
 	// -set the player's camera to be this persistent camera //
 	pc->SetViewTarget(transitionCamera);
+	// save the player's inventory in the GameInstance so we can have it next
+	//	level! //
+	UIrone3dGameInstance*const gi =
+		Cast<UIrone3dGameInstance>(GetGameInstance());
+	ensure(gi);
+	gi->setItemCounts(gs->getInventory()->getItemCounts());
 	// transition us to the next level (hopefully!)
 	transitioning = true;
 	levelComplete = true;

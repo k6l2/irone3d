@@ -10,7 +10,8 @@ AIrone3dGameState::AIrone3dGameState()
 }
 void AIrone3dGameState::generateLevelMap(UWorld* world)
 {
-	UIrone3dGameInstance* gi = Cast<UIrone3dGameInstance>(GetGameInstance());
+	UIrone3dGameInstance*const gi = 
+		Cast<UIrone3dGameInstance>(GetGameInstance());
 	ensure(gi);
 	nextFloorNumber = gi->getNextFloorNumber();
 	levelMap->generateNewLevel(world, nextFloorNumber);
