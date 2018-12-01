@@ -19,6 +19,8 @@ public:
 	class ULevelMap* getLevelMap() const;
 	class UInventory* getInventory() const;
 private:
+	UPROPERTY(VisibleAnywhere, Category = IroneGameInstance)
+		uint8 nextFloorNumber = 0;
 	UPROPERTY()
 		class ULevelMap* levelMap;
 	UPROPERTY()

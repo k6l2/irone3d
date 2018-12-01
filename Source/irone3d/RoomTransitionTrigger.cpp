@@ -32,6 +32,7 @@ FVector ARoomTransitionTrigger::getBottomLocation() const
 }
 void ARoomTransitionTrigger::BeginPlay()
 {
+	Super::BeginPlay();
 	UWorld* world = GetWorld();
 	check(world);
 	if (!world)

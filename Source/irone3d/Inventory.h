@@ -11,6 +11,7 @@ class IRONE3D_API UInventory : public UObject
 public:
 	UFUNCTION(BlueprintCallable, Category = Inventory)
 		int32 getItemCount(ItemType iType) const;
+	//void setItemCount(ItemType iType, int32 count);
 	void addItem(ItemType iType);
 	// returns false if there was no item in the inventory to remove
 	bool removeItem(ItemType iType);

@@ -9,6 +9,7 @@
 #include <Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h>
 #include <Runtime/Engine/Classes/Components/CapsuleComponent.h>
 #include <Runtime/Engine/Classes/Engine/Engine.h>
+#include <Runtime/Engine/Classes/Camera/CameraActor.h>
 #include <EngineGlobals.h>
 #include "CombatComponent.h"
 #include "Irone3DPlayer.h"
@@ -173,6 +174,11 @@ void AIrone3DPlayer::attackEnd()
 void AIrone3DPlayer::updateAttackAnimationProgress(float value)
 {
     attackAnimationProgress = value;
+}
+void AIrone3DPlayer::copyCameraPropertiesTo(ACameraActor*const otherCam) const
+{
+	otherCam->SetActorLocation(camera->GetComponentLocation());
+	otherCam->SetActorRotation(camera->GetForwardVector().Rotation());
 }
 void AIrone3DPlayer::BeginPlay()
 {

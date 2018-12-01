@@ -17,6 +17,7 @@
 #include "Components/ActorComponent.h"
 #include "UnitComponent.generated.h"
 ///DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUnitHitDelegate, UObject*, attackingObject);
+DECLARE_DELEGATE(FUnitDieDelegate);
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class IRONE3D_API UUnitComponent : public UActorComponent
 {
@@ -47,6 +48,8 @@ private:
 			AActor* OtherActor, UPrimitiveComponent* OtherComp,
 			int32 OtherBodyIndex);
 	class UCombatComponent* findCombatComponent(UPrimitiveComponent * otherComp);
+public:
+	FUnitDieDelegate delegateDie;
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Unit,
 			meta = (AllowPrivateAccess = "true"))

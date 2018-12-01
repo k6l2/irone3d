@@ -2,6 +2,7 @@
 #include "Irone3dGameState.h"
 #include "LevelMap.h"
 #include "Inventory.h"
+#include "Irone3dGameInstance.h"
 AIrone3dGameState::AIrone3dGameState()
 	: levelMap (CreateDefaultSubobject<ULevelMap >(TEXT("levelMap")))
 	, inventory(CreateDefaultSubobject<UInventory>(TEXT("inventory")))
@@ -9,9 +10,12 @@ AIrone3dGameState::AIrone3dGameState()
 }
 void AIrone3dGameState::generateLevelMap(UWorld* world)
 {
-	int8 floorNumber = 0;///TODO: actually have this as a variable that
-	///increases between floors...
-	levelMap->generateNewLevel(world, floorNumber);
+	UIrone3dGameInstance* gi = Cast<UIrone3dGameInstance>(GetGameInstance());
+	ensure(gi);
+	nextFloorNumber = gi->getNextFloorNumber();
+	levelMap->generateNewLevel(world, nextFloorNumber);
+	nextFloorNumber++;
+	gi->setNextFloorNumber(nextFloorNumber);
 }
 FString AIrone3dGameState::currentRoomLevelName()
 {

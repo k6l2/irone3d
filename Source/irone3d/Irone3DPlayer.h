@@ -42,6 +42,7 @@ public:
 		void attackEnd();
     UFUNCTION(BlueprintCallable, Category=Animation)
 		void updateAttackAnimationProgress(float value);
+	void copyCameraPropertiesTo(ACameraActor*const otherCam) const;
 protected:
 	virtual void BeginPlay() override;
 private:

@@ -22,10 +22,12 @@
 //#include <Runtime/Engine/Classes/AI/Navigation/NavigationSystem.h>
 #include <Runtime/NavigationSystem/Public/NavMesh/NavMeshBoundsVolume.h>
 #include <Runtime/NavigationSystem/Public/NavigationSystem.h>
+#include "LevelTransitionTrigger.h"
 const FVector Airone3dGameMode::TRANSITION_CAM_OFFSET = { -110,160,200 };
 const float Airone3dGameMode::LEVEL_TRANSITION_FADE_TIME = 0.75f;
 Airone3dGameMode::Airone3dGameMode()
 	:transitioning(false)
+	,levelComplete(false)
 	,fadeTime(-1.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -87,18 +89,10 @@ void Airone3dGameMode::StartPlay()
 void Airone3dGameMode::Tick(float deltaSeconds)
 {
 	Super::Tick(deltaSeconds);
-	UWorld* world = GetWorld();
-	check(world);
-	if (!world)
-	{
-		return;
-	}
-	AIrone3dGameState* gs = world->GetGameState<AIrone3dGameState>();
-	check(gs);
-	if (!gs)
-	{
-		return;
-	}
+	UWorld*const world = GetWorld();
+	ensure(world);
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	ensure(gs);
 	//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Orange,
 	//	FString::Printf(TEXT("Airone3dGameMode::Tick????")));
 	if (fadeTime > 0 && fadeTimeTotal > 0)
@@ -139,17 +133,32 @@ void Airone3dGameMode::Tick(float deltaSeconds)
 			}
 			else
 			{
-				//9 ) set the new room's "hasBeenVisited" flag
-				justLoadedRoom = gs->advanceCurrCoord(exitVec);
-				updateMinimapWidget(gs->getLevelMap());
-				//10) Load the destination level
-				FLatentActionInfo latentInfo;
-				latentInfo.CallbackTarget = this;
-				latentInfo.ExecutionFunction = 
-					FName("onLoadStreamLevelFinished");
-				latentInfo.Linkage = 1;
-				UGameplayStatics::LoadStreamLevel(world, 
-					FName(*strTransitionLevelGoingTo), true, true, latentInfo);
+				if (levelComplete)
+				{
+					UGameplayStatics::OpenLevel(world, "procGenPersist");
+				}
+				else
+				{
+					//9 ) set the new room's "hasBeenVisited" flag
+					justLoadedRoom = gs->advanceCurrCoord(exitVec);
+					updateMinimapWidget(gs->getLevelMap());
+					//10) Load the destination level
+					FLatentActionInfo latentInfo;
+					latentInfo.CallbackTarget = this;
+					latentInfo.ExecutionFunction = 
+						FName("onLoadStreamLevelFinished");
+					latentInfo.Linkage = 1;
+					UGameplayStatics::LoadStreamLevel(world, 
+						FName(*strTransitionLevelGoingTo), true, true, 
+						latentInfo);
+				}
+			}
+		}
+		else // we're still in the process of fading out
+		{
+			if (levelComplete)
+			{
+				///TODO: pan the camera towards the player
 			}
 		}
 	}
@@ -288,6 +297,34 @@ void Airone3dGameMode::startRoomTransition(ARoomTransitionTrigger* trigger)
     //8 ) fade-out to black
 	fadeOut(FLinearColor{ 0,0,0 }, LEVEL_TRANSITION_FADE_TIME);
 	transitioning = true;
+}
+void Airone3dGameMode::startLevelTransition(ALevelTransitionTrigger* trigger)
+{
+	if (transitioning)
+	{
+		return;
+	}
+	UWorld*const world = GetWorld();
+	ensure(world);
+	/// ASSUMPTION: only one player per game:
+	APlayerController*const pc = world->GetFirstPlayerController();
+	ensure(pc);
+	APawn*const pPawn = pc->GetPawn();
+	ensure(pPawn);
+	AIrone3DPlayer*const player = Cast<AIrone3DPlayer>(pPawn);
+	ensure(player);
+	AIrone3DPlayerController*const ironePc = Cast<AIrone3DPlayerController>(pc);
+	ensure(ironePc);
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	ensure(gs);
+	// -place a persistent camera actor at this location //
+	player->copyCameraPropertiesTo(transitionCamera);
+	// -set the player's camera to be this persistent camera //
+	pc->SetViewTarget(transitionCamera);
+	// transition us to the next level (hopefully!)
+	transitioning = true;
+	levelComplete = true;
+	fadeOut(FLinearColor{ 0,0,0 }, LEVEL_TRANSITION_FADE_TIME);
 }
 void Airone3dGameMode::fadeOut(const FLinearColor & fadeColor, float fadeTime)
 {

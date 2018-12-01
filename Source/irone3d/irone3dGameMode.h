@@ -24,6 +24,7 @@ public:
 	virtual void StartPlay() override;
 	virtual void Tick(float deltaSeconds) override;
 	void startRoomTransition(class ARoomTransitionTrigger* trigger);
+	void startLevelTransition(class ALevelTransitionTrigger* trigger);
 	// The following retarded function literally just calls the CreateLevelInstance
 	//	function inside blueprints because it's not exposed in the C++ API...
 	UFUNCTION(BlueprintImplementableEvent)
@@ -74,6 +75,8 @@ private:
 		bool fadingIn;
 	UPROPERTY(VisibleAnywhere, Category = Transitions)
 		bool transitioning;
+	UPROPERTY(VisibleAnywhere, Category = Transitions)
+		bool levelComplete;
 	UPROPERTY(VisibleAnywhere, Category = Transitions)
 		bool justLoadedRoom;
 };

@@ -10,6 +10,7 @@ class IRONE3D_API ABreakableFloor : public AActor
 public:	
 	ABreakableFloor();
 	virtual void Tick(float DeltaTime) override;
+	void trigger();
 protected:
 	virtual void BeginPlay() override;
 private:
@@ -30,8 +31,10 @@ private:
 		// when integrity reaches <= 0.f, the floor trap is triggered
 		//	and we destroy the static mesh actor we're on top of
 		float integritySeconds;
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = BreakableFloor)
 		class UMaterialInstanceDynamic* decalMaterial;
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = BreakableFloor)
 		int32 frameParamIndex;
+	UPROPERTY(EditAnywhere, Category = BreakableFloor)
+		bool manualTrigger = false;
 };

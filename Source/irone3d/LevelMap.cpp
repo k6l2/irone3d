@@ -60,7 +60,7 @@ bool FLevelGenNode::hasOneExit() const
 {
 	return exitCount() == 1;
 }
-void ULevelMap::generateNewLevel(UWorld* world, int8 floorNumber)
+void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber)
 {
 	this->floorNumber = floorNumber;
 	// this custom game mode or a similar blueprinted class is needed
@@ -614,6 +614,10 @@ void ULevelMap::exitVecToOffsets(const FVector & exitVec,
 }
 void ULevelMap::onStartLevelStreamLoaded()
 {
+	if (floorNumber == 0)
+	{
+		return;///DEBUG - delete me when done testing
+	}
 	// Need to set the Player's starting position manually 
 	//	when the first Level is loaded, because the APlayerStart located
 	//	in the starting room & isn't spawned when the player's Pawn is spawned! //

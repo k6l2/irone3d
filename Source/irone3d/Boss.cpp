@@ -4,8 +4,11 @@
 #include <Runtime/Engine/Classes/Components/SphereComponent.h>
 #include <Runtime/Engine/Classes/Components/SkeletalMeshComponent.h>
 #include <Runtime/Engine/Classes/GameFramework/PlayerController.h>
+#include <Runtime/CoreUObject/Public/UObject/UObjectIterator.h>
 #include "BossOrb.h"
 #include "UnitComponent.h"
+#include "BreakableFloor.h"
+#include "Irone3dGameState.h"
 ABoss::ABoss()
 	: componentSphere(CreateDefaultSubobject<USphereComponent>(TEXT("sphere")))
 	, componentMesh(CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("mesh")))
@@ -22,11 +25,10 @@ ABoss::ABoss()
 void ABoss::BeginPlay()
 {
 	Super::BeginPlay();
-	auto* const world = GetWorld();
-	if (!world)
-	{
-		return;
-	}
+	ensure(componentUnit);
+	componentUnit->delegateDie.BindUFunction(this, "onUnitDie");
+	UWorld const *const world = GetWorld();
+	ensure(world);
 	static const float TRACE_SIZE = 100000;
 	FHitResult hitResult;
 	FCollisionQueryParams queryParams;
@@ -105,6 +107,38 @@ void ABoss::BeginPlay()
 	// initialize patrol position
 	patrolDestination = { GetActorLocation().X, GetActorLocation().Y, 0 };
 	prevLocation = GetActorLocation();
+	// add the boss to the level actor list so that we don't run when we're 
+	//	not in the room
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	if (gs)
+	{
+		gs->addActorToCurrentRoom(this);
+	}
+}
+void ABoss::onUnitDie()
+{
+	///UE_LOG(LogTemp, Warning, TEXT("RIP!"));
+	auto* const world = GetWorld();
+	ensure(world);
+	// get the breakable floor in this room and trigger it! //
+	ABreakableFloor* breakableFloor = nullptr;
+	for (TObjectIterator<AActor> actIt; actIt; ++actIt)
+	{
+		if (actIt->GetWorld() != world)
+		{
+			continue;
+		}
+		auto bFloor = Cast<ABreakableFloor>(*actIt);
+		if (bFloor)
+		{
+			breakableFloor = bFloor;
+			break;
+		}
+	}
+	if (breakableFloor)
+	{
+		breakableFloor->trigger();
+	}
 }
 void ABoss::Tick(float DeltaTime)
 {

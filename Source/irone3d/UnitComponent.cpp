@@ -27,6 +27,10 @@ void UUnitComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		collidingCombatComponents;
 	for (auto combatComp : tempCollidingCombatComps)
 	{
+		if (hitpoints <= 0)
+		{
+			break;
+		}
 		if (!combatComp->isAttackActive() ||
 			!combatComp->registerHit(this))
 		{
@@ -40,9 +44,13 @@ void UUnitComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		//	damage, hitpoints);
 		FDamageEvent dmgEvent;
 		owner->TakeDamage(damage, dmgEvent, instigator, combatOwner);
-		if (destroyOnDie && hitpoints <= 0)
+		if (hitpoints <= 0)
 		{
-			owner->Destroy();
+			delegateDie.ExecuteIfBound();
+			if (destroyOnDie)
+			{
+				owner->Destroy();
+			}
 		}
 		if (combatComp->destroyOwnerOnDamageDealt())
 		{

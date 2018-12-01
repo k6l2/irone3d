@@ -26,13 +26,17 @@ ABreakableFloor::ABreakableFloor()
 void ABreakableFloor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	UWorld* const world = GetWorld();
-	if (!floorActor || !world)
+	if (manualTrigger)
 	{
-		/// GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red,
-		/// 	FString::Printf(TEXT("WTF")));
 		return;
 	}
+	///UWorld* const world = GetWorld();
+	///if (!ensure(floorActor) || !ensure(world))
+	///{
+	///	/// GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red,
+	///	/// 	FString::Printf(TEXT("WTF")));
+	///	return;
+	///}
 	TArray<AActor*> overlappingActors;
 	boxComponentRoot->GetOverlappingActors(
 		overlappingActors, TSubclassOf<ACharacter>{});
@@ -74,24 +78,35 @@ void ABreakableFloor::Tick(float DeltaTime)
 	}
 	if (integritySeconds <= 0.f)
 	{
-		// cause the destructible actor to break immediately //
-		const FVector floorActorLocation = floorActor->GetActorLocation();
-		floorActor->Destroy();
-		Destroy();
-		// Spawn a destructible actor at the 
-		//	same position of the static mesh actor //
-		FActorSpawnParameters spawnParams;
-		spawnParams.bNoFail = true;
-		ADestructibleActor* destructible = 
-			world->SpawnActor<ADestructibleActor>(destructibleTileClass,
+		trigger();
+	}
+}
+void ABreakableFloor::trigger()
+{
+	UWorld* const world = GetWorld();
+	if (!ensure(floorActor) || !ensure(world))
+	{
+		/// GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red,
+		/// 	FString::Printf(TEXT("WTF")));
+		return;
+	}
+	// cause the destructible actor to break immediately //
+	const FVector floorActorLocation = floorActor->GetActorLocation();
+	floorActor->Destroy();
+	Destroy();
+	// Spawn a destructible actor at the 
+	//	same position of the static mesh actor //
+	FActorSpawnParameters spawnParams;
+	spawnParams.bNoFail = true;
+	ADestructibleActor* destructible =
+		world->SpawnActor<ADestructibleActor>(destructibleTileClass,
 			floorActorLocation, FRotator::ZeroRotator, spawnParams);
-		if (destructible && destructible->IsA(destructibleTileClass))
-		{
-			/// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,
-			/// 	FString::Printf(TEXT("destructible spawned!")));
-			destructible->GetDestructibleComponent()->ApplyRadiusDamage(
-				100.f, destructible->GetActorLocation(), 250.f, 2500.f, true);
-		}
+	if (destructible && destructible->IsA(destructibleTileClass))
+	{
+		/// GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,
+		/// 	FString::Printf(TEXT("destructible spawned!")));
+		destructible->GetDestructibleComponent()->ApplyRadiusDamage(
+			100.f, destructible->GetActorLocation(), 250.f, 2500.f, true);
 	}
 }
 void ABreakableFloor::BeginPlay()
@@ -132,6 +147,9 @@ void ABreakableFloor::BeginPlay()
 	FVector floorBoxExtent;
 	floorActor->GetActorBounds(true, floorOrigin, floorBoxExtent);
 	boxComponentRoot->SetBoxExtent(floorBoxExtent);
+	// adjust the decal to match the box component //
+	decalComponent->DecalSize.Y = floorBoxExtent.X;
+	decalComponent->DecalSize.Z = floorBoxExtent.Y;
 	// Create a dynamic material instance for the decal //
 	decalMaterial = decalComponent->CreateDynamicMaterialInstance();
 	decalMaterial->InitializeScalarParameterAndGetIndex(

@@ -58,18 +58,10 @@ void AItem::onOverlapBegin(UPrimitiveComponent * OverlappedComponent,
 	AActor * OtherActor, UPrimitiveComponent * OtherComp,
 	int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
-	UWorld* world = GetWorld();
-	check(world);
-	if (!world)
-	{
-		return;
-	}
-	AIrone3dGameState* gs = world->GetGameState<AIrone3dGameState>();
-	check(gs);
-	if (!gs)
-	{
-		return;
-	}
+	UWorld*const world = GetWorld();
+	ensure(world);
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	ensure(gs);
 	if(OtherComp->IsA(UCapsuleComponent::StaticClass()))
 	{
 		gs->getInventory()->addItem(itemMeta.type);

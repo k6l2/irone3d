@@ -23,7 +23,9 @@ public:
 		bool isDead() const;
 protected:
 	virtual void BeginPlay() override;
-public:
+private:
+	UFUNCTION()
+		void onUnitDie();
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components,
 			meta = (AllowPrivateAccess = "true"))

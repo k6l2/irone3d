@@ -61,7 +61,7 @@ private:
 		float weight;
 	};
 public:
-	void generateNewLevel(UWorld* world, int8 floorNumber);
+	void generateNewLevel(UWorld* world, uint8 floorNumber);
 	RoomCoord getStartCoord() const;
 	RoomCoord getCurrCoord() const;
 	// sets the "hasBeenVisited" flag in the new room to true
@@ -96,5 +96,5 @@ private:
 	TArray<FLevelGenNode> finalLevelLayout;
 	RoomCoord startCoord;
 	RoomCoord currCoord;
-	int8 floorNumber;
+	uint8 floorNumber;
 };
