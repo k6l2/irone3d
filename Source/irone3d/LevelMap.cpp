@@ -348,7 +348,7 @@ void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber)
 		{
 			const int32 i = x + y*ROOM_ARRAY_SIZE;
 			auto& node = finalLevelLayout[i];
-			///DEBUG: reveal entire level with this line //////////////////////
+			/// DEBUG: reveal entire level with this line /////////////////////
 			if(node.exitCount() > 0) node.hasBeenVisited = true;
 			/// ///////////////////////////////////////////////////////////////
 			const RoomCoord rc{ x,y };
@@ -356,10 +356,16 @@ void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber)
 			const FQuat levelQuat = findLevelRotation(node);
 			// we now should know what type of room to load (levelDir)
 			//	as well as where we need to put it (r & c)
+			///TODO: figure out how many unique rooms there are and choose a 
+			///	random # in this range
 			FString roomName = levelDir + FString::FromInt(0);
 			if (rc == startCoord)
 			{
 				roomName = levelDir + FString("S");
+			}
+			else if (node.bossRoom)
+			{
+				roomName = levelDir + FString("B");
 			}
 			const FString uniqueRoomInstanceString =
 				"room" + FString::FromInt(y*ROOM_ARRAY_SIZE + x);
@@ -614,10 +620,12 @@ void ULevelMap::exitVecToOffsets(const FVector & exitVec,
 }
 void ULevelMap::onStartLevelStreamLoaded()
 {
+	/// Prevent player from spawning at the level's APlayerSpawn actor ////////
 	///if (floorNumber == 0)
 	///{
 	///	return;///DEBUG - delete me when done testing
 	///}
+	/// ///////////////////////////////////////////////////////////////////////
 	// Need to set the Player's starting position manually 
 	//	when the first Level is loaded, because the APlayerStart located
 	//	in the starting room & isn't spawned when the player's Pawn is spawned! //
