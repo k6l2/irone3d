@@ -377,7 +377,11 @@ bool ABoss::isFalling() const
 }
 bool ABoss::isDead() const
 {
+	if (!ensure(componentUnit))
+	{
+		return false;
+	}
 	// not sure why I have to do this, but for some reason I keep getting a
 	//	null deref here when hot-reloading c++ code wtf
-	return componentUnit && componentUnit->isDead();
+	return componentUnit->isDead();
 }

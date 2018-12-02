@@ -46,7 +46,7 @@ AIrone3DPlayer::AIrone3DPlayer()
 }
 void AIrone3DPlayer::moveForward(float value)
 {
-    if (!Controller || value == 0.0f || hardLanding)
+	if (!Controller || value == 0.0f || hardLanding)
     {
         return;
     }
@@ -180,10 +180,16 @@ void AIrone3DPlayer::updateAttackAnimationProgress(float value)
 bool AIrone3DPlayer::isKilled() const
 {
 	UWorld* const world = GetWorld();
-	ensure(world);
+	if (!ensure(world))
+	{
+		return false;
+	}
 	AIrone3dGameState const*const gs =
 		world->GetGameState<AIrone3dGameState>();
-	ensure(gs);
+	if (!ensure(gs))
+	{
+		return false;
+	}
 	return gs->getInventory()->getItemCount(ItemType::HEART) < 1;
 }
 void AIrone3DPlayer::copyCameraPropertiesTo(ACameraActor*const otherCam) const
@@ -291,10 +297,6 @@ void AIrone3DPlayer::Tick(float DeltaTime)
 	const int32 numHeartsInInventory =
 		gs->getInventory()->getItemCount(ItemType::HEART);
 	unitComponent->setHitpoints(numHeartsInInventory);
-	if (numHeartsInInventory < 1)
-	{
-		///TODO: if we're out of HEARTS, game over
-	}
 }
 void AIrone3DPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -308,7 +310,6 @@ float AIrone3DPlayer::TakeDamage(float DamageAmount,
 	ensure(world);
 	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
 	ensure(gs);
-	hurtFlashSeconds = unitComponent->getGlobalHitInvincibleDuration();
 	if (world)
 	{
 		auto particleComp = UGameplayStatics::SpawnEmitterAtLocation(world,
@@ -322,6 +323,10 @@ float AIrone3DPlayer::TakeDamage(float DamageAmount,
 		{
 			break;
 		}
+	}
+	if (!isKilled())
+	{
+		hurtFlashSeconds = unitComponent->getGlobalHitInvincibleDuration();
 	}
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator,
 		DamageCauser);

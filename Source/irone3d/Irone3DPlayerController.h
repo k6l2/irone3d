@@ -12,6 +12,7 @@ public:
 	void transitionExitToLocation(const FVector& exitLocation);
 	virtual void Tick(float deltaSeconds) override;
 	bool isAutoMoving() const;
+	bool isControlDisabled() const;
 protected:
     virtual void SetupInputComponent() override;
 private:

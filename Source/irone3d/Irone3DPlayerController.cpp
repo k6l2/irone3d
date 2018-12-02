@@ -126,6 +126,12 @@ bool AIrone3DPlayerController::isAutoMoving() const
 {
 	return autoMoveToLocation;
 }
+bool AIrone3DPlayerController::isControlDisabled() const
+{
+	AIrone3DPlayer const*const ironePlayer = Cast<AIrone3DPlayer>(GetPawn());
+	return autoMoveToLocation ||
+		(ironePlayer && ironePlayer->isKilled());
+}
 void AIrone3DPlayerController::SetupInputComponent()
 {
     Super::SetupInputComponent();
@@ -143,7 +149,7 @@ void AIrone3DPlayerController::SetupInputComponent()
 }
 void AIrone3DPlayerController::jumpPressed()
 {
-	if (autoMoveToLocation) return;
+	if (isControlDisabled()) return;
     auto character = GetCharacter();
     if (character)
     {
@@ -160,7 +166,7 @@ void AIrone3DPlayerController::jumpReleased()
 }
 void AIrone3DPlayerController::attackPressed()
 {
-	if (autoMoveToLocation) return;
+	if (isControlDisabled()) return;
     auto ironePlayer = Cast<AIrone3DPlayer>(GetPawn());
     if (ironePlayer)
     {
@@ -177,7 +183,8 @@ void AIrone3DPlayerController::attackReleased()
 }
 void AIrone3DPlayerController::moveForward(float value)
 {
-    auto ironePlayer = Cast<AIrone3DPlayer>(GetPawn());
+	if (isControlDisabled()) return;
+	auto ironePlayer = Cast<AIrone3DPlayer>(GetPawn());
     if (ironePlayer)
     {
         ironePlayer->moveForward(value);
@@ -185,8 +192,8 @@ void AIrone3DPlayerController::moveForward(float value)
 }
 void AIrone3DPlayerController::moveRight(float value)
 {
-	if (autoMoveToLocation) return;
-    auto ironePlayer = Cast<AIrone3DPlayer>(GetPawn());
+	if (isControlDisabled()) return;
+	auto ironePlayer = Cast<AIrone3DPlayer>(GetPawn());
     if (ironePlayer)
     {
         ironePlayer->moveRight(value);
@@ -194,8 +201,8 @@ void AIrone3DPlayerController::moveRight(float value)
 }
 void AIrone3DPlayerController::turn(float value)
 {
-	if (autoMoveToLocation) return;
-    auto pawn = GetPawn();
+	if (isControlDisabled()) return;
+	auto pawn = GetPawn();
     if (pawn)
     {
         pawn->AddControllerYawInput(value);
@@ -203,8 +210,8 @@ void AIrone3DPlayerController::turn(float value)
 }
 void AIrone3DPlayerController::turnRate(float value)
 {
-	if (autoMoveToLocation) return;
-    if (FMath::Abs(value) < deadzone)
+	if (isControlDisabled()) return;
+	if (FMath::Abs(value) < deadzone)
     {
         return;
     }
@@ -216,8 +223,8 @@ void AIrone3DPlayerController::turnRate(float value)
 }
 void AIrone3DPlayerController::lookUp(float value)
 {
-	if (autoMoveToLocation) return;
-    auto pawn = GetPawn();
+	if (isControlDisabled()) return;
+	auto pawn = GetPawn();
     if (pawn)
     {
         pawn->AddControllerPitchInput(value);
@@ -225,8 +232,8 @@ void AIrone3DPlayerController::lookUp(float value)
 }
 void AIrone3DPlayerController::lookUpRate(float value)
 {
-	if (autoMoveToLocation) return;
-    if (FMath::Abs(value) < deadzone)
+	if (isControlDisabled()) return;
+	if (FMath::Abs(value) < deadzone)
     {
         return;
     }
