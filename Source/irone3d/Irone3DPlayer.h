@@ -7,6 +7,9 @@ UCLASS()
 class IRONE3D_API AIrone3DPlayer : public ACharacter
 {
 	GENERATED_BODY()
+private:
+	static const FLinearColor HURT_OUTLINE_COLOR;
+	static const float HURT_FLASH_SECONDS;
 public:
 	AIrone3DPlayer();
 	virtual void Tick(float DeltaTime) override;
@@ -85,7 +88,14 @@ private:
 		UMaterialInstanceDynamic* dynMaterialSlash;
 	UPROPERTY(EditDefaultsOnly, Category = Player)
 		TSubclassOf<AActor> classLockedDoor;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, 
+			meta = (AllowPrivateAccess = "true"))
+		UParticleSystem* particleSystemBlood;
+	UMaterialInstanceDynamic* outlineMaterial;
+	UMaterialInstanceDynamic* eyesMaterial;
+	FLinearColor defaultOutlineColor;
     float attackAnimationProgress;
+	float hurtFlashSeconds = 0.f;
     bool hardLanding;
     // canAttack can only be true if we're in idle/walk/run state
     bool canAttack;

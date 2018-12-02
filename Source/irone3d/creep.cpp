@@ -61,36 +61,24 @@ void Acreep::BeginPlay()
 	//TArray < TArray < FString > > sys;
 	//TArray < TArray < FString > > param;
 	//particleSystemBlood->GetParametersUtilized(sys, param);
-	UWorld* world = GetWorld();
-	if (!world)
-	{
-		return;
-	}
-	AIrone3dGameState* gs = world->GetGameState<AIrone3dGameState>();
-	if (!gs)
-	{
-		return;
-	}
+	UWorld*const world = GetWorld();
+	ensure(world);
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	ensure(gs);
 	gs->addActorToCurrentRoom(this);
 }
 void Acreep::onSeePawn(APawn * pawn)
 {
-    auto controller = GetController();
-    if (!controller)
-    {
-        return;
-    }
-    auto creepController = Cast<AAiControllerCreep>(controller);
-    if (!creepController)
-    {
-        return;
-    }
-    auto player = Cast<AIrone3DPlayer>(pawn);
-    if (!player)
-    {
-        return;
-    }
-    creepController->onSeeEnemyPawn(pawn);
+    AController*const controller = GetController();
+	ensure(controller);
+	AAiControllerCreep*const creepController = 
+		Cast<AAiControllerCreep>(controller);
+	ensure(creepController);
+	AIrone3DPlayer*const player = Cast<AIrone3DPlayer>(pawn);
+	if (player)
+	{
+		creepController->onSeeEnemyPawn(pawn);
+	}
 }
 void Acreep::Tick(float DeltaTime)
 {
@@ -115,7 +103,7 @@ float Acreep::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent,
 	AController * EventInstigator, AActor * DamageCauser)
 {
 	hurtFlashSeconds = HURT_FLASH_SECONDS;
-	auto world = GetWorld();
+	UWorld*const world = GetWorld();
 	if (world)
 	{
 		auto particleComp =

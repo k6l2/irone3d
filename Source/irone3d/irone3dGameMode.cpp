@@ -156,7 +156,14 @@ void Airone3dGameMode::Tick(float deltaSeconds)
 		{
 			if (levelComplete)
 			{
-				///TODO: pan the camera towards the player
+				APlayerController*const pc = world->GetFirstPlayerController();
+				ensure(pc);
+				AIrone3DPlayer*const player = 
+					Cast<AIrone3DPlayer>(pc->GetPawn());
+				ensure(player);
+				FVector toPlayerVec = player->GetActorLocation() - 
+					transitionCamera->GetActorLocation();
+				transitionCamera->SetActorRotation(toPlayerVec.Rotation());
 			}
 		}
 	}

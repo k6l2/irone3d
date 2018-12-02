@@ -19,6 +19,11 @@
 #include "irone3dGameMode.h"
 #include "UnitComponent.h"
 #include "Irone3dGameInstance.h"
+#include <Runtime/Engine/Classes/Kismet/GameplayStatics.h>
+#include <Runtime/Engine/Classes/Particles/ParticleSystem.h>
+#include <Runtime/Engine/Classes/Particles/ParticleSystemComponent.h>
+const FLinearColor AIrone3DPlayer::HURT_OUTLINE_COLOR = { 0.f,0.f,0.f,1.f };
+const float AIrone3DPlayer::HURT_FLASH_SECONDS = 5.f;
 AIrone3DPlayer::AIrone3DPlayer()
     :cameraBoom(CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom")))
     ,camera(CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera")))
@@ -206,6 +211,19 @@ void AIrone3DPlayer::BeginPlay()
     dynMaterialSlash = 
 		meshAttack->CreateAndSetMaterialInstanceDynamicFromMaterial(
 			0, meshAttack->GetMaterial(0));
+	const int32 outlineMaterialIndex = 
+		meshCharacter->GetMaterialIndex("MaterialOutline");
+	const int32 eyesMaterialIndex = 
+		meshCharacter->GetMaterialIndex("MaterialEyes");
+	outlineMaterial =
+		meshCharacter->CreateAndSetMaterialInstanceDynamic(
+			outlineMaterialIndex);
+	eyesMaterial =
+		meshCharacter->CreateAndSetMaterialInstanceDynamic(eyesMaterialIndex);
+	FMaterialParameterInfo outlineColorInfo;
+	outlineColorInfo.Name = "color";
+	outlineMaterial->GetVectorParameterValue(
+		outlineColorInfo, defaultOutlineColor);
 }
 void AIrone3DPlayer::onCapsuleHit(UPrimitiveComponent* HitComponent, 
 	AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse,
@@ -252,6 +270,23 @@ void AIrone3DPlayer::Tick(float DeltaTime)
         dynMaterialSlash->SetScalarParameterValue(
 			"swipeOffset", 0.f);
     }
+	// hurt effects //
+	{
+		const float hurtPercent =
+			FMath::Clamp(hurtFlashSeconds / HURT_FLASH_SECONDS, 0.f, 1.f);
+		if (hurtFlashSeconds)
+		{
+			///UE_LOG(LogTemp, Warning, TEXT("hurtFlashSeconds=%f"), hurtFlashSeconds);
+			hurtFlashSeconds -= DeltaTime;
+		}
+		///const float colorLerpProgress = FMath::Pow(hurtPercent, 2);
+		const float colorLerp = hurtFlashSeconds > 0 ?
+			FMath::Abs(FMath::Sin(hurtFlashSeconds*10)) : 0.f;
+		const FLinearColor outlineColor = FLinearColor::LerpUsingHSV(
+			defaultOutlineColor, HURT_OUTLINE_COLOR, colorLerp);
+		outlineMaterial->SetVectorParameterValue("color", outlineColor);
+		eyesMaterial->SetVectorParameterValue("color", outlineColor);
+	}
 	///UE_LOG(LogTemp, Warning, TEXT("WTF M8???"));
 	gm->updateCompassWidget(camera->GetForwardVector());
 	const int32 numHeartsInInventory =
@@ -274,6 +309,13 @@ float AIrone3DPlayer::TakeDamage(float DamageAmount,
 	ensure(world);
 	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
 	ensure(gs);
+	hurtFlashSeconds = HURT_FLASH_SECONDS;
+	if (world)
+	{
+		auto particleComp = UGameplayStatics::SpawnEmitterAtLocation(world,
+			particleSystemBlood, GetActorLocation());
+		///particleComp->SetVectorParameter("color", FVector{ 1.f,0.f,0.f });
+	}
 	// remove HEART items from inventory to the amount of damage //
 	for (float dmg = 0.f; dmg < DamageAmount; dmg += 1.f)
 	{
@@ -282,7 +324,6 @@ float AIrone3DPlayer::TakeDamage(float DamageAmount,
 			break;
 		}
 	}
-	///TODO: flash effect etc
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator,
 		DamageCauser);
 }
