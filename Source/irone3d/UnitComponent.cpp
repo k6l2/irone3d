@@ -11,11 +11,12 @@ void UUnitComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	auto const owner = GetOwner();
-	if (!ensure(owner))
+	if (globalHitInvincibleTimer)
 	{
-		return;
+		globalHitInvincibleTimer -= DeltaTime;
 	}
+	AActor*const owner = GetOwner();
+	ensure(owner);
 	//if (collidingCombatComponents.Num() > 0)
 	//{
 	//	UE_LOG(LogTemp, Warning, TEXT("collidingCombatComponents.Num()=%i"),
@@ -27,7 +28,7 @@ void UUnitComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		collidingCombatComponents;
 	for (auto combatComp : tempCollidingCombatComps)
 	{
-		if (hitpoints <= 0)
+		if (hitpoints <= 0 || globalHitInvincibleTimer > 0)
 		{
 			break;
 		}
@@ -51,6 +52,12 @@ void UUnitComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 			{
 				owner->Destroy();
 			}
+		}
+		else
+		{
+			///UE_LOG(LogTemp, Warning, TEXT("Setting i-frames! hitpoints=%f globalHitInvincibleDuration=%f"),
+			///	hitpoints, globalHitInvincibleDuration);
+			globalHitInvincibleTimer = globalHitInvincibleDuration;
 		}
 		if (combatComp->destroyOwnerOnDamageDealt())
 		{
@@ -118,6 +125,10 @@ void UUnitComponent::bindOverlapsToComponent(UPrimitiveComponent* component)
 		component->OnComponentEndOverlap.AddDynamic(
 			this, &UUnitComponent::onUnitOverlapEnd);
 	}
+}
+float UUnitComponent::getGlobalHitInvincibleDuration() const
+{
+	return globalHitInvincibleDuration;
 }
 void UUnitComponent::BeginPlay()
 {

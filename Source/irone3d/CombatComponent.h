@@ -17,25 +17,28 @@ class IRONE3D_API UCombatComponent : public USceneComponent
 	GENERATED_BODY()
 public:	
 	UCombatComponent();
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
-		FActorComponentTickFunction* ThisTickFunction) override;
 	float getDamage() const;
 	void startAttack();
 	// returns true if the hit has been registered for the first time
 	//	false if this CombatComponent has already hit unitComp during this attack
+	// if alwaysAttacking flag is set, this always returns true
 	bool registerHit(class UUnitComponent* unitComp);
 	void stopAttack();
 	bool isAttackActive() const;
 	bool destroyOwnerOnDamageDealt() const;
 	void setDestroyOnDealDamage(bool value);
+	void setAlwaysAttacking(bool value);
 protected:
 	virtual void BeginPlay() override;
 private:
-	bool attackActive;
+	UPROPERTY(EditAnywhere, Transient, Category = Combat)
+		bool attackActive = false;
+	UPROPERTY(EditAnywhere, Category = Combat)
+		bool alwaysAttacking = false;
 	UPROPERTY(EditAnywhere, Category = Combat)
 		bool m_destroyOwnerOnDamageDealt = false;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, 
 			meta = (AllowPrivateAccess = "true"))
-		float damage;
+		float damage = 1.f;
 	TArray<class UUnitComponent*> hitUnits;
 };

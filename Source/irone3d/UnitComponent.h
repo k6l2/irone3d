@@ -34,6 +34,7 @@ public:
 	void setHitpoints(float hp);
 	bool isDead() const;
 	void setDestroyOnDie(bool value);
+	float getGlobalHitInvincibleDuration() const;
 protected:
 	virtual void BeginPlay() override;
 private:
@@ -54,10 +55,11 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Unit,
 			meta = (AllowPrivateAccess = "true"))
 		float hitpoints;
-	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, 
-	//		meta = (AllowPrivateAccess = "true"))
-	//float globalHitInvincibleTime;
-	//float globalHitInvincibleTimer;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Unit, 
+			meta = (AllowPrivateAccess = "true"))
+		float globalHitInvincibleDuration = 0.f;
+	UPROPERTY(VisibleInstanceOnly, Transient, Category = Unit)
+		float globalHitInvincibleTimer = 0.f;
 	UPROPERTY(VisibleInstanceOnly, Transient, Category = Unit)
 		TArray<class UCombatComponent*> collidingCombatComponents;
 	UPROPERTY(VisibleAnywhere, Category = Unit)
@@ -69,6 +71,7 @@ private:
 		//	add the Character's capsule component to the list of vulnerable 
 		//	components...
 		bool hasBegunPlay = false;
+	///TODO: delete this since we now have a die delegate!
 	UPROPERTY(EditAnywhere, Category = Unit)
 		bool destroyOnDie = true;
 };

@@ -9,7 +9,6 @@ class IRONE3D_API AIrone3DPlayer : public ACharacter
 	GENERATED_BODY()
 private:
 	static const FLinearColor HURT_OUTLINE_COLOR;
-	static const float HURT_FLASH_SECONDS;
 public:
 	AIrone3DPlayer();
 	virtual void Tick(float DeltaTime) override;

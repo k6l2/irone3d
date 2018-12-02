@@ -23,7 +23,6 @@
 #include <Runtime/Engine/Classes/Particles/ParticleSystem.h>
 #include <Runtime/Engine/Classes/Particles/ParticleSystemComponent.h>
 const FLinearColor AIrone3DPlayer::HURT_OUTLINE_COLOR = { 0.f,0.f,0.f,1.f };
-const float AIrone3DPlayer::HURT_FLASH_SECONDS = 5.f;
 AIrone3DPlayer::AIrone3DPlayer()
     :cameraBoom(CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom")))
     ,camera(CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera")))
@@ -272,8 +271,8 @@ void AIrone3DPlayer::Tick(float DeltaTime)
     }
 	// hurt effects //
 	{
-		const float hurtPercent =
-			FMath::Clamp(hurtFlashSeconds / HURT_FLASH_SECONDS, 0.f, 1.f);
+		///const float hurtPercent =
+		///	FMath::Clamp(hurtFlashSeconds / HURT_FLASH_SECONDS, 0.f, 1.f);
 		if (hurtFlashSeconds)
 		{
 			///UE_LOG(LogTemp, Warning, TEXT("hurtFlashSeconds=%f"), hurtFlashSeconds);
@@ -309,7 +308,7 @@ float AIrone3DPlayer::TakeDamage(float DamageAmount,
 	ensure(world);
 	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
 	ensure(gs);
-	hurtFlashSeconds = HURT_FLASH_SECONDS;
+	hurtFlashSeconds = unitComponent->getGlobalHitInvincibleDuration();
 	if (world)
 	{
 		auto particleComp = UGameplayStatics::SpawnEmitterAtLocation(world,

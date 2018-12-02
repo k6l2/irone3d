@@ -28,12 +28,24 @@ private:
     void onSeePawn(APawn* pawn);
 private:
 	float hurtFlashSeconds;
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
-    class UPawnSensingComponent* pawnSense;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	class UUnitComponent* unitComponent;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	UParticleSystem* particleSystemBlood;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components,
+			meta = (AllowPrivateAccess = "true"))
+		class UPawnSensingComponent* pawnSense;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components,
+			meta = (AllowPrivateAccess = "true"))
+		class UUnitComponent* unitComponent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, 
+			meta = (AllowPrivateAccess = "true"))
+		UParticleSystem* particleSystemBlood;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Components, 
+			meta = (AllowPrivateAccess = "true"))
+		class USphereComponent* componentAttackSphere;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Components, 
+			meta = (AllowPrivateAccess = "true"))
+		class USphereComponent* componentAggroSphere;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Components, 
+			meta = (AllowPrivateAccess = "true"))
+		class UCombatComponent* componentCombat;
 	UMaterialInstanceDynamic* outlineMaterial;
 	UMaterialInstanceDynamic* eyesMaterial;
 	FLinearColor defaultOutlineColor;

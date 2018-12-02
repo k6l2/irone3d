@@ -2,15 +2,8 @@
 #include "CombatComponent.h"
 #include "UnitComponent.h"
 UCombatComponent::UCombatComponent()
-	:attackActive(false)
-	,damage(1.f)
 {
 	PrimaryComponentTick.bCanEverTick = false;
-}
-void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-	FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 float UCombatComponent::getDamage() const
 {
@@ -23,7 +16,7 @@ void UCombatComponent::startAttack()
 }
 bool UCombatComponent::registerHit(UUnitComponent * unitComp)
 {
-	if (hitUnits.Contains(unitComp))
+	if (hitUnits.Contains(unitComp) && !alwaysAttacking)
 	{
 		return false;
 	}
@@ -33,11 +26,12 @@ bool UCombatComponent::registerHit(UUnitComponent * unitComp)
 void UCombatComponent::stopAttack()
 {
 	attackActive = false;
+	alwaysAttacking = false;
 	hitUnits.Empty();
 }
 bool UCombatComponent::isAttackActive() const
 {
-	return attackActive;
+	return attackActive || alwaysAttacking;
 }
 bool UCombatComponent::destroyOwnerOnDamageDealt() const
 {
@@ -46,6 +40,11 @@ bool UCombatComponent::destroyOwnerOnDamageDealt() const
 void UCombatComponent::setDestroyOnDealDamage(bool value)
 {
 	m_destroyOwnerOnDamageDealt = value;
+}
+void UCombatComponent::setAlwaysAttacking(bool value)
+{
+	alwaysAttacking = value;
+	hitUnits.Empty();
 }
 void UCombatComponent::BeginPlay()
 {

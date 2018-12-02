@@ -7,18 +7,27 @@
 #include <GameFramework/PawnMovementComponent.h>
 #include <Runtime/AIModule/Classes/Perception/PawnSensingComponent.h>
 #include <Runtime/Engine/Classes/Components/CapsuleComponent.h>
+#include <Runtime/Engine/Classes/Components/SphereComponent.h>
 #include <Runtime/Engine/Classes/Components/SkeletalMeshComponent.h>
 #include <Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h>
 #include <Runtime/Engine/Classes/Kismet/GameplayStatics.h>
 #include <Runtime/Engine/Classes/Particles/ParticleSystem.h>
 #include <Runtime/Engine/Classes/Particles/ParticleSystemComponent.h>
+#include "CombatComponent.h"
 const FLinearColor Acreep::HURT_OUTLINE_COLOR = {1.f,0.f,0.f,1.f};
 const float Acreep::HURT_FLASH_SECONDS = 5.f;
 Acreep::Acreep()
     :hurtFlashSeconds(0.f)
 	,pawnSense(CreateDefaultSubobject<UPawnSensingComponent>(TEXT("pawnSense")))
 	,unitComponent(CreateDefaultSubobject<UUnitComponent>(TEXT("unitComponent")))
+	,componentAttackSphere(CreateDefaultSubobject<USphereComponent>(TEXT("attackSphere")))
+	,componentAggroSphere(CreateDefaultSubobject<USphereComponent>(TEXT("aggroSphere")))
+	,componentCombat(CreateDefaultSubobject<UCombatComponent>(TEXT("combat")))
 {
+	componentAttackSphere->SetupAttachment(RootComponent);
+	componentCombat->SetupAttachment(componentAttackSphere);
+	componentCombat->setAlwaysAttacking(true);
+	componentAggroSphere->SetupAttachment(RootComponent);
 	PrimaryActorTick.bCanEverTick = true;
 }
 float Acreep::lateralSpeed() const
@@ -78,6 +87,7 @@ void Acreep::onSeePawn(APawn * pawn)
 	if (player)
 	{
 		creepController->onSeeEnemyPawn(pawn);
+		///TODO: aggro other creeps
 	}
 }
 void Acreep::Tick(float DeltaTime)
@@ -140,6 +150,7 @@ float Acreep::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent,
 		{
 			//UE_LOG(LogTemp, Warning, TEXT("IT IS"));
 			creepController->aggro(instigatingPawn);
+			///TODO: aggro other creeps
 		}
 	}
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
