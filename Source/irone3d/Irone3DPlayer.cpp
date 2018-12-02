@@ -187,6 +187,12 @@ void AIrone3DPlayer::copyCameraPropertiesTo(ACameraActor*const otherCam) const
 	otherCam->SetActorLocation(camera->GetComponentLocation());
 	otherCam->SetActorRotation(camera->GetForwardVector().Rotation());
 }
+void AIrone3DPlayer::cutSceneStopVelocity()
+{
+	auto movementComp = GetMovementComponent();
+	ensure(movementComp);
+	movementComp->Velocity *= 0.9f;
+}
 void AIrone3DPlayer::BeginPlay()
 {
 	Super::BeginPlay();

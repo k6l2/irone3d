@@ -9,6 +9,8 @@
 #include "UnitComponent.h"
 #include "BreakableFloor.h"
 #include "Irone3dGameState.h"
+#include <Engine/StaticMeshActor.h>
+#include "irone3dGameMode.h"
 ABoss::ABoss()
 	: componentSphere(CreateDefaultSubobject<USphereComponent>(TEXT("sphere")))
 	, componentMesh(CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("mesh")))
@@ -109,10 +111,26 @@ void ABoss::BeginPlay()
 	prevLocation = GetActorLocation();
 	// add the boss to the level actor list so that we don't run when we're 
 	//	not in the room
+	// Also, add the FallingDoor static mesh actor to the same room!
+	AStaticMeshActor* fallingDoor = nullptr;
+	for (TObjectIterator<AActor> actIt; actIt; ++actIt)
+	{
+		if (actIt->GetWorld() != world)
+		{
+			continue;
+		}
+		if (actIt->GetName() == "FallingDoor")
+		{
+			fallingDoor = Cast<AStaticMeshActor>(*actIt);
+			break;
+		}
+	}
+	ensure(fallingDoor);
 	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
 	if (gs)
 	{
 		gs->addActorToCurrentRoom(this);
+		gs->addActorToCurrentRoom(fallingDoor);
 	}
 }
 void ABoss::onUnitDie()
@@ -245,11 +263,13 @@ void ABoss::Tick(float DeltaTime)
 		}
 	}
 	// AI //
+	Airone3dGameMode*const gm =
+		Cast<Airone3dGameMode>(world->GetAuthGameMode());
 	if (componentUnit->isDead())
 	{
 		gravityOn = true;
 	}
-	else
+	else if(gm && !gm->isTransitioning())
 	{
 		static const float CHARGE_SECONDS = 2;
 		if (chargeOrbTime <= 0 && orbAttackCooldownTime <= 0)

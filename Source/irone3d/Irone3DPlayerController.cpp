@@ -6,8 +6,10 @@
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include "Irone3DPlayer.h"
 #include "irone3dGameMode.h"
-#define ECC_PLAYER_PAWN ECC_GameTraceChannel1
-#define ECC_ENEMY_PAWN  ECC_GameTraceChannel2
+#include "Irone3dGameState.h"
+#include "irone3d.h"
+#include <Engine/StaticMeshActor.h>
+#include "RoomTransitionTrigger.h"
 AIrone3DPlayerController::AIrone3DPlayerController()
     :baseTurnRate(45)
     ,baseLookUpRate(45)
@@ -17,16 +19,8 @@ AIrone3DPlayerController::AIrone3DPlayerController()
 }
 void AIrone3DPlayerController::transitionExitToLocation(const FVector & exitLocation)
 {
-	auto pawn = GetPawn();
-	if (!pawn)
-	{
-		return;
-	}
-	auto player = Cast<AIrone3DPlayer>(pawn);
-	if (!player)
-	{
-		return;
-	}
+	AIrone3DPlayer*const player = Cast<AIrone3DPlayer>(GetPawn());
+	ensure(player);
 	const FVector toExitLocation = exitLocation - player->GetActorLocation();
 	player->SetActorRotation(toExitLocation.ToOrientationRotator());
 	// Disable gravity
@@ -37,7 +31,8 @@ void AIrone3DPlayerController::transitionExitToLocation(const FVector & exitLoca
 	auto capsule = player->GetCapsuleComponent();
 	check(capsule);
 	///capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	capsule->SetCollisionResponseToChannel(ECC_ENEMY_PAWN, ECollisionResponse::ECR_Ignore);
+	capsule->SetCollisionResponseToChannel(
+		ECC_EnemyPawn, ECollisionResponse::ECR_Ignore);
 	// Calculate the plane/ray which will end the movement script when we pass it
 	autoMoveToLocationPoint = exitLocation;
 	autoMoveToLocationRay = toExitLocation.GetSafeNormal();
@@ -48,16 +43,12 @@ void AIrone3DPlayerController::transitionExitToLocation(const FVector & exitLoca
 void AIrone3DPlayerController::Tick(float deltaSeconds)
 {
 	Super::Tick(deltaSeconds);
-	auto pawn = GetPawn();
-	if (!pawn)
-	{
-		return;
-	}
-	auto player = Cast<AIrone3DPlayer>(pawn);
-	if (!player)
-	{
-		return;
-	}
+	UWorld*const world = GetWorld();
+	ensure(world);
+	AIrone3DPlayer*const player = Cast<AIrone3DPlayer>(GetPawn());
+	ensure(player);
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	ensure(gs);
 	if (autoMoveToLocation)
 	{
 		const FVector toLocationPoint = autoMoveToLocationPoint - player->GetActorLocation();
@@ -66,7 +57,64 @@ void AIrone3DPlayerController::Tick(float deltaSeconds)
 		//	FString::Printf(TEXT("autoMoveToLocation! dotProd=%f"), dotProd));
 		if (dotProd <= 0)
 		{
-			onAutoMoveEnd();
+			TArray<TWeakObjectPtr<AActor>> currRoomActorSet = 
+				gs->getCurrentRoomActorSet();
+			AStaticMeshActor* fallingDoor = nullptr;
+			ARoomTransitionTrigger const* roomTransition = nullptr;
+			//ASSUMPTION: in the boss room w/ a falling door, there is only one
+			//	transition trigger in the room
+			for (auto& actor : currRoomActorSet)
+			{
+				if (!actor.IsValid())
+				{
+					UE_LOG(LogTemp, Warning,
+						TEXT("actor is invalid, skipping..."))
+						continue;
+				}
+				AActor*const actorP = actor.Get();
+				if (actorP->GetName() == "FallingDoor" &&
+					actorP->IsA(AStaticMeshActor::StaticClass()))
+				{
+					fallingDoor = Cast<AStaticMeshActor>(actorP);
+					continue;
+				}
+				if (actorP->IsA(ARoomTransitionTrigger::StaticClass()))
+				{
+					roomTransition = Cast<ARoomTransitionTrigger>(actorP);
+				}
+			}
+			// if the room contains a AStaticMeshActor called "FallingDoor"
+			//	AND the room contains a ARoomTransitionTrigger
+			//	AND the falling door is not in the same position as the
+			//		room transition trigger
+			//	then, we need to move the falling door into place before ending
+			//		the auto-movement cutscene
+			if (fallingDoor && roomTransition)
+			{
+				FVector const toClosedPosition = 
+					roomTransition->GetActorLocation() - 
+						fallingDoor->GetActorLocation();
+				if (FVector::DotProduct(toClosedPosition, 
+						roomTransition->GetActorUpVector()) < 0)
+				{
+					closeDoorSpeed += 
+						toClosedPosition.GetSafeNormal() * 1000 * deltaSeconds;
+					fallingDoor->SetActorLocation(
+						fallingDoor->GetActorLocation() + 
+							closeDoorSpeed * deltaSeconds);
+				}
+				else
+				{
+					fallingDoor->SetActorLocation(
+						roomTransition->GetActorLocation());
+					onAutoMoveEnd();
+				}
+				player->cutSceneStopVelocity();
+			}
+			else
+			{
+				onAutoMoveEnd();
+			}
 		}
 		else
 		{
@@ -190,31 +238,16 @@ void AIrone3DPlayerController::lookUpRate(float value)
 }
 void AIrone3DPlayerController::onAutoMoveEnd()
 {
-	UWorld* world = GetWorld();
-	if (!world)
-	{
-		return;
-	}
-	AGameModeBase* gmb = world->GetAuthGameMode();
-	if (!gmb)
-	{
-		return;
-	}
-	Airone3dGameMode* gm = Cast<Airone3dGameMode>(gmb);
-	if (!gm)
-	{
-		return;
-	}
-	auto pawn = GetPawn();
-	if (!pawn)
-	{
-		return;
-	}
-	auto player = Cast<AIrone3DPlayer>(pawn);
-	if (!player)
-	{
-		return;
-	}
+	UWorld*const world = GetWorld();
+	ensure(world);
+	AGameModeBase*const gmb = world->GetAuthGameMode();
+	ensure(gmb);
+	Airone3dGameMode*const gm = Cast<Airone3dGameMode>(gmb);
+	ensure(gm);
+	APawn*const pawn = GetPawn();
+	ensure(pawn);
+	AIrone3DPlayer*const player = Cast<AIrone3DPlayer>(pawn);
+	ensure(player);
 	// re-enable gravity
 	auto movementComp = player->GetCharacterMovement();
 	check(movementComp);
@@ -223,7 +256,8 @@ void AIrone3DPlayerController::onAutoMoveEnd()
 	auto capsule = player->GetCapsuleComponent();
 	check(capsule);
 	///capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	capsule->SetCollisionResponseToChannel(ECC_ENEMY_PAWN, ECollisionResponse::ECR_Block);
+	capsule->SetCollisionResponseToChannel(
+		ECC_EnemyPawn, ECollisionResponse::ECR_Block);
 	SetViewTarget(pawn);
 	autoMoveToLocation = false;
 	gm->onEndTransition();

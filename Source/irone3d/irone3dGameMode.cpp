@@ -167,43 +167,20 @@ void Airone3dGameMode::startRoomTransition(ARoomTransitionTrigger* trigger)
 	{
 		return;
 	}
-	UWorld* world = GetWorld();
-	check(world);
-	if (!world)
-	{
-		return;
-	}
+	UWorld*const world = GetWorld();
+	ensure(world);
 	/// ASSUMPTION: only one player per game:
-	APlayerController* pc = world->GetFirstPlayerController();
-	check(pc);
-	if (!pc)
-	{
-		return;
-	}
-	APawn* pPawn = pc->GetPawn();
-	check(pPawn);
-	if (!pPawn)
-	{
-		return;
-	}
-	AIrone3DPlayer* player = Cast<AIrone3DPlayer>(pPawn);
-	check(player);
-	if (!player)
-	{
-		return;
-	}
-	AIrone3DPlayerController* ironePc = Cast<AIrone3DPlayerController>(pc);
-	check(ironePc);
-	if (!ironePc)
-	{
-		return;
-	}
-	AIrone3dGameState* gs = world->GetGameState<AIrone3dGameState>();
-	check(gs);
-	if (!gs)
-	{
-		return;
-	}
+	APlayerController*const pc = world->GetFirstPlayerController();
+	ensure(pc);
+	APawn*const pPawn = pc->GetPawn();
+	ensure(pPawn);
+	AIrone3DPlayer*const player = Cast<AIrone3DPlayer>(pPawn);
+	ensure(player);
+	AIrone3DPlayerController*const ironePc = 
+		Cast<AIrone3DPlayerController>(pc);
+	ensure(ironePc);
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	ensure(gs);
     /*
 		1 ) Get the FString of the current Level name from GameState
         2 ) pause the game
@@ -530,6 +507,10 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 void Airone3dGameMode::onEndTransition()
 {
 	transitioning = false;
+}
+bool Airone3dGameMode::isTransitioning() const
+{
+	return transitioning;
 }
 void Airone3dGameMode::BeginPlay()
 {

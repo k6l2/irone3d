@@ -49,6 +49,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Player)
 		bool isKilled() const;
 	void copyCameraPropertiesTo(ACameraActor*const otherCam) const;
+	void cutSceneStopVelocity();
 protected:
 	virtual void BeginPlay() override;
 private:

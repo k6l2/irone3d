@@ -44,6 +44,7 @@ public:
 	// this should only get called by AIrone3DPlayer when 
 	//	they finish auto-moving inside the next room!
 	void onEndTransition();
+	bool isTransitioning() const;
 protected:
 	virtual void BeginPlay() override;
 private:
