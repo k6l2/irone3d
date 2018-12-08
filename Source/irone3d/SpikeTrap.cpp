@@ -19,8 +19,7 @@ ASpikeTrap::ASpikeTrap()
 	boxComponent->SetupAttachment(skeletalMeshComponent, "spikeBoneSocket");
 	boxComponentRoot->SetupAttachment(skeletalMeshComponent);
 	combatComponent->SetupAttachment(boxComponent);
-	PrimaryActorTick.bCanEverTick = true;
-
+	PrimaryActorTick.bCanEverTick = false;
 }
 bool ASpikeTrap::trapActivated() const
 {
@@ -46,5 +45,5 @@ void ASpikeTrap::startCombat() const
 }
 void ASpikeTrap::stopCombat() const
 {
-	combatComponent->stopAttack();
+	//combatComponent->stopAttack();
 }

@@ -621,10 +621,10 @@ void ULevelMap::exitVecToOffsets(const FVector & exitVec,
 void ULevelMap::onStartLevelStreamLoaded()
 {
 	/// Prevent player from spawning at the level's APlayerSpawn actor ////////
-	if (floorNumber == 0)
-	{
-		return;///DEBUG - delete me when done testing
-	}
+	///if (floorNumber == 0)
+	///{
+	///	return;///DEBUG - delete me when done testing
+	///}
 	/// ///////////////////////////////////////////////////////////////////////
 	// Need to set the Player's starting position manually 
 	//	when the first Level is loaded, because the APlayerStart located

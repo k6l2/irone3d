@@ -18,6 +18,8 @@ bool UCombatComponent::registerHit(UUnitComponent * unitComp)
 {
 	if (hitUnits.Contains(unitComp) && !alwaysAttacking)
 	{
+		///UE_LOG(LogTemp, Warning, TEXT("registerHit->false! alwaysAttacking=%s"), 
+		///	(alwaysAttacking ? TEXT("T"):TEXT("F")));
 		return false;
 	}
 	hitUnits.Add(unitComp);

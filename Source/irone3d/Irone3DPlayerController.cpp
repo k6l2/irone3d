@@ -183,7 +183,7 @@ void AIrone3DPlayerController::attackReleased()
 }
 void AIrone3DPlayerController::moveForward(float value)
 {
-	if (isControlDisabled()) return;
+	if (isControlDisabled() && !autoMoveToLocation) return;
 	auto ironePlayer = Cast<AIrone3DPlayer>(GetPawn());
     if (ironePlayer)
     {
