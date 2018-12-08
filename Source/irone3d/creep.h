@@ -21,6 +21,7 @@ public:
 		class UInputComponent* PlayerInputComponent) override;
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
 		AController * EventInstigator, AActor * DamageCauser) override;
+	void getOverlappingAggroActors(TArray<AActor*>& outArray) const;
 protected:
 	virtual void BeginPlay() override;
 private:

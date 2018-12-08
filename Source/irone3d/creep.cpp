@@ -47,6 +47,14 @@ bool Acreep::canSee(AActor* actor) const
     }
     return pawnSense->HasLineOfSightTo(actor);
 }
+void Acreep::getOverlappingAggroActors(TArray<AActor*>& outArray) const
+{
+	if (!ensure(componentAggroSphere))
+	{
+		return;
+	}
+	componentAggroSphere->GetOverlappingActors(outArray);
+}
 void Acreep::BeginPlay()
 {
 	Super::BeginPlay();
@@ -87,7 +95,6 @@ void Acreep::onSeePawn(APawn * pawn)
 	if (player)
 	{
 		creepController->onSeeEnemyPawn(pawn);
-		///TODO: aggro other creeps
 	}
 }
 void Acreep::Tick(float DeltaTime)
@@ -150,7 +157,6 @@ float Acreep::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent,
 		{
 			//UE_LOG(LogTemp, Warning, TEXT("IT IS"));
 			creepController->aggro(instigatingPawn);
-			///TODO: aggro other creeps
 		}
 	}
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);

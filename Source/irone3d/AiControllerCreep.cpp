@@ -119,7 +119,6 @@ bool AAiControllerCreep::flock()
 	///also probably don't normalize the source vectors probably
 	///you know, and do some game design on the ai stuff
 	//exit conditions? nothing to flock to -> sleep, see player -> aggro
-
 	//1. get the giant list of other creeps
 	UWorld* world = GetWorld();
 	if (!world)
@@ -194,15 +193,16 @@ bool AAiControllerCreep::flock()
 	}
 	float scaleFactor = 1.0;
 	moveComp->Velocity += flockDirection * scaleFactor;
-
 	return false;
 }
 void AAiControllerCreep::aggro(AActor * targetObject)
 {
-	if (!Blackboard)
+	Acreep*const creep = Cast<Acreep>(GetPawn());
+	if (!Blackboard || !ensure(creep))
 	{
 		return;
 	}
+	const bool wasAggro = isAggrod();
 	auto target = Blackboard->GetValueAsObject("target");
 	if (target)
 	{
@@ -213,6 +213,37 @@ void AAiControllerCreep::aggro(AActor * targetObject)
 	Blackboard->SetValueAsObject("target", targetObject);
 	const auto targetLocation = targetObject->GetActorLocation();
 	Blackboard->SetValueAsVector("locationLastKnownTarget", targetLocation);
+	if (!wasAggro)
+	{
+		TArray<AActor*> overlappingAggroActors;
+		creep->getOverlappingAggroActors(overlappingAggroActors);
+		for (auto actor : overlappingAggroActors)
+		{
+			Acreep*const aggroCreep = Cast<Acreep>(actor);
+			if (!aggroCreep || !aggroCreep->Controller)
+			{
+				continue;
+			}
+			AAiControllerCreep*const aggroCreepController =
+				Cast<AAiControllerCreep>(aggroCreep->Controller);
+			if (!aggroCreepController)
+			{
+				continue;
+			}
+			if (!aggroCreepController->isAggrod())
+			{
+				aggroCreepController->aggro(targetObject);
+			}
+		}
+	}
+}
+bool AAiControllerCreep::isAggrod() const
+{
+	if (!Blackboard)
+	{
+		return false;
+	}
+	return Blackboard->GetValueAsBool("aggrod");
 }
 void AAiControllerCreep::BeginPlay()
 {

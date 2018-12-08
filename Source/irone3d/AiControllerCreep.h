@@ -13,16 +13,18 @@ public:
     virtual void Possess(APawn * InPawn) override;
     void onSeeEnemyPawn(APawn* enemyPawn);
     UFUNCTION(BlueprintCallable, Category = BehaviorTree)
-    bool moveToTargetActor();
+		bool moveToTargetActor();
     UFUNCTION(BlueprintCallable, Category = BehaviorTree)
-    bool flock();
-
+		bool flock();
 	void aggro(AActor* targetObject);
+	bool isAggrod() const;
 protected:
     virtual void BeginPlay() override;
 private:
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Misc, meta = (AllowPrivateAccess = "true"))
-    UBlackboardData* bbDataAsset;
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Misc, meta = (AllowPrivateAccess = "true"))
-    UBehaviorTree* behaviorTree;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Misc, 
+			meta = (AllowPrivateAccess = "true"))
+		UBlackboardData* bbDataAsset;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Misc, 
+			meta = (AllowPrivateAccess = "true"))
+		UBehaviorTree* behaviorTree;
 };
