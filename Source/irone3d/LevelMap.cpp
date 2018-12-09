@@ -63,6 +63,7 @@ bool FLevelGenNode::hasOneExit() const
 void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber)
 {
 	this->floorNumber = floorNumber;
+	hasSpawnedKeyYet = false;
 	// this custom game mode or a similar blueprinted class is needed
 	//	in order to call the stupid createLevelInstance function
 	auto gm = world->GetAuthGameMode<Airone3dGameMode>();
@@ -262,6 +263,7 @@ void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber)
 	static const int NUM_ROOMS_ON_FIRST_FLOOR = 5;
 	const int numRoomsToCull = (ROOM_ARRAY_SIZE*ROOM_ARRAY_SIZE) - 
 		NUM_ROOMS_ON_FIRST_FLOOR - floorNumber;
+	normalRoomsTotal = finalLevelLayout.Num() - numRoomsToCull - 2;
 	for (int r = 0; r < numRoomsToCull; r++)
 	{
 		TArray<uint16> oneExitRoomIndexes = locateOneExitRooms();
@@ -350,7 +352,7 @@ void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber)
 			const int32 i = x + y*ROOM_ARRAY_SIZE;
 			auto& node = finalLevelLayout[i];
 			/// DEBUG: reveal entire level with this line /////////////////////
-			if(node.exitCount() > 0) node.hasBeenVisited = true;
+			///if(node.exitCount() > 0) node.hasBeenVisited = true;
 			/// ///////////////////////////////////////////////////////////////
 			const RoomCoord rc{ x,y };
 			FString levelDir = findLevelDir(node);
@@ -397,6 +399,7 @@ void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber)
 			}
 		}
 	}
+	normalRoomsUnexplored = normalRoomsTotal;
 }
 ULevelMap::RoomCoord ULevelMap::getStartCoord() const
 {
@@ -416,6 +419,10 @@ bool ULevelMap::advanceCurrCoord(const FVector & exitVec)
 	FLevelGenNode& currNode = finalLevelLayout[currI];
 	bool wasPreviouslyVisited = currNode.hasBeenVisited;
 	currNode.hasBeenVisited = true;
+	if (!wasPreviouslyVisited)
+	{
+		normalRoomsUnexplored--;
+	}
 	return !wasPreviouslyVisited;
 }
 FString ULevelMap::currentRoomLevelName()
@@ -490,6 +497,22 @@ bool ULevelMap::hasExitWest(const RoomCoord& coord) const
 int ULevelMap::getFloorNumber() const
 {
 	return floorNumber;
+}
+uint16 ULevelMap::getTotalNormalRooms() const
+{
+	return normalRoomsTotal;
+}
+uint16 ULevelMap::getTotalNormalUnexploredRooms() const
+{
+	return normalRoomsUnexplored;
+}
+bool ULevelMap::getHasSpawnedKeyYet() const
+{
+	return hasSpawnedKeyYet;
+}
+void ULevelMap::setHasSpawnedKeyYet(bool value)
+{
+	hasSpawnedKeyYet = value;
 }
 FString ULevelMap::findLevelDir(const FLevelGenNode & node)
 {

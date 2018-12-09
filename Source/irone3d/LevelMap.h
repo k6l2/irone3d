@@ -84,6 +84,8 @@ public:
 		int getFloorNumber() const;
 	uint16 getTotalNormalRooms() const;
 	uint16 getTotalNormalUnexploredRooms() const;
+	bool getHasSpawnedKeyYet() const;
+	void setHasSpawnedKeyYet(bool value);
 private:
 	FString findLevelDir(const FLevelGenNode& node);
 	FQuat findLevelRotation(const FLevelGenNode& node);
@@ -99,4 +101,7 @@ private:
 	RoomCoord startCoord;
 	RoomCoord currCoord;
 	uint8 floorNumber;
+	bool hasSpawnedKeyYet;
+	uint16 normalRoomsTotal;
+	uint16 normalRoomsUnexplored;
 };
