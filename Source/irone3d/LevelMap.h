@@ -82,6 +82,8 @@ public:
 	bool hasExitWest (const RoomCoord& coord) const;
 	UFUNCTION(BlueprintCallable, Category = LevelMap)
 		int getFloorNumber() const;
+	uint16 getTotalNormalRooms() const;
+	uint16 getTotalNormalUnexploredRooms() const;
 private:
 	FString findLevelDir(const FLevelGenNode& node);
 	FQuat findLevelRotation(const FLevelGenNode& node);

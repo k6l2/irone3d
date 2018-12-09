@@ -18,7 +18,7 @@ class IRONE3D_API UCombatComponent : public USceneComponent
 public:	
 	UCombatComponent();
 	float getDamage() const;
-	void startAttack();
+	void startAttack(float newDamage = 1.f);
 	// returns true if the hit has been registered for the first time
 	//	false if this CombatComponent has already hit unitComp during this attack
 	// if alwaysAttacking flag is set, this always returns true

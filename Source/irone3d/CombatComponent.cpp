@@ -9,8 +9,9 @@ float UCombatComponent::getDamage() const
 {
 	return damage;
 }
-void UCombatComponent::startAttack()
+void UCombatComponent::startAttack(float newDamage)
 {
+	damage = newDamage;
 	attackActive = true;
 	hitUnits.Empty();
 }
