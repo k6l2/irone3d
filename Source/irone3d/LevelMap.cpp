@@ -265,13 +265,14 @@ void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber)
 	for (int r = 0; r < numRoomsToCull; r++)
 	{
 		TArray<uint16> oneExitRoomIndexes = locateOneExitRooms();
-		if (oneExitRoomIndexes.Num() < 1)
+		if (!ensure(oneExitRoomIndexes.Num() >= 1))
 		{
 			// Should never happen, but JUST IN CASE
-			check(oneExitRoomIndexes.Num() > 0);
 			break;
 		}
-		const uint16 nextCullI = oneExitRoomIndexes[0];
+		const uint16 randOneRoomIndexI =
+			FMath::RandRange(0, oneExitRoomIndexes.Num() - 1);
+		const uint16 nextCullI = oneExitRoomIndexes[randOneRoomIndexI];
 		auto& cullNode = finalLevelLayout[nextCullI];
 		// to cull a room, we remove all the exits for the room, and then
 		//	iterate over all the adjacent rooms and remove their exits to this
