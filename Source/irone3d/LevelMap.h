@@ -68,7 +68,8 @@ public:
 	//	returns true if the room we move to was previously not visited
 	bool advanceCurrCoord(const FVector& exitVec);
 	FString currentRoomLevelName();
-	FString adjacentRoomLevelName(const FVector& exitVec);
+	FString adjacentRoomLevelName(const FVector& exitVec) const;
+	bool adjacentRoomIsBossRoom(const FVector& exitVec) const;
 	void addActorToCurrentRoom(AActor* actor);
 	// returns a copy of the current room's actor set should only be called
 	//	like 1-2 times during a transition, so the performance of the 
@@ -86,6 +87,8 @@ public:
 	uint16 getTotalNormalUnexploredRooms() const;
 	bool getHasSpawnedKeyYet() const;
 	void setHasSpawnedKeyYet(bool value);
+	bool getHasSpawnedBossDoorYet() const;
+	void setHasSpawnedBossDoorYet(bool value);
 private:
 	FString findLevelDir(const FLevelGenNode& node);
 	FQuat findLevelRotation(const FLevelGenNode& node);
@@ -102,6 +105,7 @@ private:
 	RoomCoord currCoord;
 	uint8 floorNumber;
 	bool hasSpawnedKeyYet;
+	bool hasSpawnedBossDoorYet;
 	uint16 normalRoomsTotal;
 	uint16 normalRoomsUnexplored;
 };

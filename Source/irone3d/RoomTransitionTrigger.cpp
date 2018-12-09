@@ -9,6 +9,8 @@
 #include "irone3dGameMode.h"
 #include "Irone3dGameState.h"
 #include "Irone3DPlayer.h"
+#include "LevelMap.h"
+#include "UObject/ConstructorHelpers.h"
 ARoomTransitionTrigger::ARoomTransitionTrigger()
 	:boxComponent(CreateDefaultSubobject<UBoxComponent>(TEXT("boxComponent")))
 	,exitDirection(CreateDefaultSubobject<UArrowComponent>(TEXT("arrowComponent")))
@@ -18,6 +20,12 @@ ARoomTransitionTrigger::ARoomTransitionTrigger()
 	boxComponent->SetMobility(EComponentMobility::Static);
 	boxComponent->OnComponentBeginOverlap.AddDynamic(this, &ARoomTransitionTrigger::onOverlapBegin);
 	exitDirection->SetupAttachment(RootComponent);
+	static ConstructorHelpers::FObjectFinder<UBlueprint> LockedDoorBp(
+		TEXT("Blueprint'/Game/Blueprints/BpLockedDoor.BpLockedDoor'"));
+	if (LockedDoorBp.Succeeded() && LockedDoorBp.Object)
+	{
+		lockedDoorBpClass = (UClass*)LockedDoorBp.Object->GeneratedClass;
+	}
 	/// I don't think I actually need to do this...
 	//exitDirection->SetRelativeLocation(FVector::ZeroVector);
 }
@@ -33,43 +41,39 @@ FVector ARoomTransitionTrigger::getBottomLocation() const
 void ARoomTransitionTrigger::BeginPlay()
 {
 	Super::BeginPlay();
-	UWorld* world = GetWorld();
-	check(world);
-	if (!world)
-	{
-		return;
-	}
-	AIrone3dGameState* gs = world->GetGameState<AIrone3dGameState>();
-	check(gs);
-	if (!gs)
-	{
-		return;
-	}
+	UWorld*const world = GetWorld();
+	if (!world) return;
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	if (!gs) return;
 	gs->addActorToCurrentRoom(this);
+	ULevelMap*const levelMap = gs->getLevelMap();
+	if (!levelMap) return;
+	///const FString adjacentRoomName = 
+	///	levelMap->adjacentRoomLevelName(getExitVector());
+	///UE_LOG(LogTemp, Warning, TEXT("*** adjacentRoomName=%s ***"),
+	///	*adjacentRoomName);
+	if (levelMap->adjacentRoomIsBossRoom(getExitVector()) &&
+		!levelMap->getHasSpawnedBossDoorYet())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("*** SPAWNING BOSS DOOR ***"));
+		FActorSpawnParameters spawnParams;
+		spawnParams.bNoFail = true;
+		world->SpawnActor<AActor>(lockedDoorBpClass, GetActorLocation(), 
+			GetActorRotation(), spawnParams);
+		levelMap->setHasSpawnedBossDoorYet(true);
+	}
 }
 void ARoomTransitionTrigger::onOverlapBegin(UPrimitiveComponent * OverlappedComp,
 	AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, 
 	bool bFromSweep, const FHitResult & SweepResult)
 {
-	if (!Cast<AIrone3DPlayer>(OtherActor))
-	{
-		return;
-	}
-	UWorld* world = GetWorld();
-	if (!world)
-	{
-		return;
-	}
-	AGameModeBase* gmb = world->GetAuthGameMode();
-	if (!gmb)
-	{
-		return;
-	}
-	Airone3dGameMode* gm = Cast<Airone3dGameMode>(gmb);
-	if (!gm)
-	{
-		return;
-	}
+	if (!Cast<AIrone3DPlayer>(OtherActor)) return;
+	UWorld*const world = GetWorld();
+	if (!world) return;
+	AGameModeBase*const gmb = world->GetAuthGameMode();
+	if (!gmb) return;
+	Airone3dGameMode*const gm = Cast<Airone3dGameMode>(gmb);
+	if (!gm) return;
 	///GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Orange,
 	///	FString::Printf(TEXT("TransitionTrigger hit!!!")));
 	gm->startRoomTransition(this);

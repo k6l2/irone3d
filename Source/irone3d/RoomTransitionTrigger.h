@@ -23,4 +23,6 @@ private:
 		class UBoxComponent* boxComponent;
 	UPROPERTY(VisibleAnywhere, Category = Collision)
 		class UArrowComponent* exitDirection;
+	UPROPERTY(VisibleAnywhere, Category = RoomTransitionTrigger)
+		TSubclassOf<AActor> lockedDoorBpClass;
 };

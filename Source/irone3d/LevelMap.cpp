@@ -64,6 +64,7 @@ void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber)
 {
 	this->floorNumber = floorNumber;
 	hasSpawnedKeyYet = false;
+	hasSpawnedBossDoorYet = false;
 	// this custom game mode or a similar blueprinted class is needed
 	//	in order to call the stupid createLevelInstance function
 	auto gm = world->GetAuthGameMode<Airone3dGameMode>();
@@ -431,7 +432,7 @@ FString ULevelMap::currentRoomLevelName()
 	FLevelGenNode& currNode = finalLevelLayout[currI];
 	return currNode.uniqueLevelName;
 }
-FString ULevelMap::adjacentRoomLevelName(const FVector & exitVec)
+FString ULevelMap::adjacentRoomLevelName(const FVector & exitVec) const
 {
 	int8 offsetX = 0, offsetY = 0;
 	exitVecToOffsets(exitVec, offsetX, offsetY);
@@ -444,6 +445,20 @@ FString ULevelMap::adjacentRoomLevelName(const FVector & exitVec)
 	}
 	const int32 adjacentI = adjacentX + adjacentY*ROOM_ARRAY_SIZE;
 	return finalLevelLayout[adjacentI].uniqueLevelName;
+}
+bool ULevelMap::adjacentRoomIsBossRoom(const FVector& exitVec) const
+{
+	int8 offsetX = 0, offsetY = 0;
+	exitVecToOffsets(exitVec, offsetX, offsetY);
+	int8 adjacentX = currCoord.x() + offsetX;
+	int8 adjacentY = currCoord.y() + offsetY;
+	if (adjacentX < 0 || adjacentX >= ROOM_ARRAY_SIZE ||
+		adjacentY < 0 || adjacentY >= ROOM_ARRAY_SIZE)
+	{
+		return false;
+	}
+	const int32 adjacentI = adjacentX + adjacentY * ROOM_ARRAY_SIZE;
+	return finalLevelLayout[adjacentI].bossRoom;
 }
 void ULevelMap::addActorToCurrentRoom(AActor * actor)
 {
@@ -513,6 +528,14 @@ bool ULevelMap::getHasSpawnedKeyYet() const
 void ULevelMap::setHasSpawnedKeyYet(bool value)
 {
 	hasSpawnedKeyYet = value;
+}
+bool ULevelMap::getHasSpawnedBossDoorYet() const
+{
+	return hasSpawnedBossDoorYet;
+}
+void ULevelMap::setHasSpawnedBossDoorYet(bool value)
+{
+	hasSpawnedBossDoorYet = value;
 }
 FString ULevelMap::findLevelDir(const FLevelGenNode & node)
 {
