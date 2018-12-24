@@ -140,6 +140,8 @@ void AIrone3DPlayerController::SetupInputComponent()
     InputComponent->BindAction("Jump", IE_Released,   this, &AIrone3DPlayerController::jumpReleased);
     InputComponent->BindAction("attack", IE_Pressed,  this, &AIrone3DPlayerController::attackPressed);
     InputComponent->BindAction("attack", IE_Released, this, &AIrone3DPlayerController::attackReleased);
+    InputComponent->BindAction("sprint", IE_Pressed,  this, &AIrone3DPlayerController::dashPressed);
+    InputComponent->BindAction("sprint", IE_Released, this, &AIrone3DPlayerController::dashReleased);
     InputComponent->BindAxis("MoveForward", this, &AIrone3DPlayerController::moveForward);
     InputComponent->BindAxis("MoveRight",   this, &AIrone3DPlayerController::moveRight);
     InputComponent->BindAxis("Turn",        this, &AIrone3DPlayerController::turn);
@@ -167,7 +169,7 @@ void AIrone3DPlayerController::jumpReleased()
 void AIrone3DPlayerController::attackPressed()
 {
 	if (isControlDisabled()) return;
-    auto ironePlayer = Cast<AIrone3DPlayer>(GetPawn());
+	AIrone3DPlayer*const ironePlayer = Cast<AIrone3DPlayer>(GetPawn());
     if (ironePlayer)
     {
         ironePlayer->tryAttackStart();
@@ -175,11 +177,28 @@ void AIrone3DPlayerController::attackPressed()
 }
 void AIrone3DPlayerController::attackReleased()
 {
-    auto ironePlayer = Cast<AIrone3DPlayer>(GetPawn());
+	AIrone3DPlayer*const ironePlayer = Cast<AIrone3DPlayer>(GetPawn());
     if (ironePlayer)
     {
         ironePlayer->tryAttackEnd();
     }
+}
+void AIrone3DPlayerController::dashPressed()
+{
+	if (isControlDisabled()) return;
+	AIrone3DPlayer*const ironePlayer = Cast<AIrone3DPlayer>(GetPawn());
+	if (ironePlayer)
+	{
+		ironePlayer->dashStart();
+	}
+}
+void AIrone3DPlayerController::dashReleased()
+{
+	AIrone3DPlayer*const ironePlayer = Cast<AIrone3DPlayer>(GetPawn());
+	if (ironePlayer)
+	{
+		ironePlayer->dashEnd();
+	}
 }
 void AIrone3DPlayerController::moveForward(float value)
 {

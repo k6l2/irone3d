@@ -20,6 +20,8 @@ private:
     void jumpReleased();
     void attackPressed();
     void attackReleased();
+    void dashPressed();
+    void dashReleased();
     void moveForward(float value);
     void moveRight(float value);
     void turn(float value);

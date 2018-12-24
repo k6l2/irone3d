@@ -40,6 +40,8 @@ public:
 		void canAttackEnd();
     void tryAttackStart();
     void tryAttackEnd();
+    void dashStart();
+    void dashEnd();
     UFUNCTION(BlueprintCallable, Category=Animation)
 		bool isTryingToAttack() const;
     UFUNCTION(BlueprintCallable, Category=Animation)
@@ -83,6 +85,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components,
 			meta = (AllowPrivateAccess = "true"))
 		class UUnitComponent* unitComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components,
+			meta = (AllowPrivateAccess = "true"))
+		class UParticleSystemComponent* dashParticleComponent;
     UPROPERTY()
 		UMaterialInstanceDynamic* dynMaterialSlash;
 	UPROPERTY(EditDefaultsOnly, Category = Player)
@@ -99,5 +104,6 @@ private:
     // canAttack can only be true if we're in idle/walk/run state
     bool canAttack;
     bool tryingAttack;
+    bool dashing = false;
     bool attackAnimationPlaying;
 };

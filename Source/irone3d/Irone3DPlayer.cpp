@@ -24,12 +24,13 @@
 #include <Runtime/Engine/Classes/Particles/ParticleSystemComponent.h>
 const FLinearColor AIrone3DPlayer::HURT_OUTLINE_COLOR = { 0.f,0.f,0.f,1.f };
 AIrone3DPlayer::AIrone3DPlayer()
-    :cameraBoom(CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom")))
-    ,camera(CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera")))
-    ,meshCharacter(CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshCharacter")))
-    ,meshAttack(CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshAttack")))
-    ,attackCombatComponent(CreateDefaultSubobject<UCombatComponent>(TEXT("AttackCombat")))
-    ,unitComponent(CreateDefaultSubobject<UUnitComponent>(TEXT("Unit")))
+    :cameraBoom           (CreateDefaultSubobject<USpringArmComponent     >(TEXT("CameraBoom")))
+    ,camera               (CreateDefaultSubobject<UCameraComponent        >(TEXT("FollowCamera")))
+    ,meshCharacter        (CreateDefaultSubobject<USkeletalMeshComponent  >(TEXT("MeshCharacter")))
+    ,meshAttack           (CreateDefaultSubobject<UStaticMeshComponent    >(TEXT("MeshAttack")))
+    ,attackCombatComponent(CreateDefaultSubobject<UCombatComponent        >(TEXT("AttackCombat")))
+    ,unitComponent        (CreateDefaultSubobject<UUnitComponent          >(TEXT("Unit")))
+    ,dashParticleComponent(CreateDefaultSubobject<UParticleSystemComponent>(TEXT("dashParticles")))
     ,hardLanding(false)
     ,canAttack(false)
     ,tryingAttack(false)
@@ -43,6 +44,15 @@ AIrone3DPlayer::AIrone3DPlayer()
     meshAttack->SetupAttachment(RootComponent);
 	attackCombatComponent->SetupAttachment(meshAttack);
 	unitComponent->setDestroyOnDie(false);
+	///dashParticleComponent->SetupAttachment(RootComponent);
+	///dashParticleComponent->bAutoManageAttachment = true;
+	///dashParticleComponent->bAutoActivate = false;
+	///dashParticleComponent->SetHiddenInGame(false);
+	//////FAttachmentTransformRules dashParticleAttachTransformRules(
+	//////	EAttachmentRule::SnapToTarget, false);
+	//////dashParticleComponent->AttachToComponent(meshCharacter, 
+	//////	dashParticleAttachTransformRules);
+	///dashParticleComponent->ActivateSystem();
 }
 void AIrone3DPlayer::moveForward(float value)
 {
@@ -156,6 +166,18 @@ void AIrone3DPlayer::tryAttackEnd()
 {
     tryingAttack = false;
 }
+void AIrone3DPlayer::dashStart()
+{
+	dashing = true;
+	//dashParticleComponent->SetActive(true, true);
+	dashParticleComponent->Activate();
+	//dashParticleComponent->ForceUpdateBounds();
+}
+void AIrone3DPlayer::dashEnd()
+{
+	dashing = false;
+	dashParticleComponent->Deactivate();
+}
 bool AIrone3DPlayer::isTryingToAttack() const
 {
 	//UE_LOG(LogTemp, Warning,
@@ -206,6 +228,11 @@ void AIrone3DPlayer::cutSceneStopVelocity()
 void AIrone3DPlayer::BeginPlay()
 {
 	Super::BeginPlay();
+	///dashParticleComponent->SetupAttachment(RootComponent);
+	dashParticleComponent->SetRelativeLocation(FVector::ZeroVector);
+	FAttachmentTransformRules attachRules(EAttachmentRule::SnapToTarget, true);
+	dashParticleComponent->AttachToComponent(RootComponent, attachRules);
+	dashParticleComponent->Deactivate();
 	unitComponent->addVulnerablePrimitiveComponent(GetCapsuleComponent());
 	if (!GetCapsuleComponent()->OnComponentHit.IsAlreadyBound(
 		this, &AIrone3DPlayer::onCapsuleHit))
@@ -297,6 +324,25 @@ void AIrone3DPlayer::Tick(float DeltaTime)
 	const int32 numHeartsInInventory =
 		gs->getInventory()->getItemCount(ItemType::HEART);
 	unitComponent->setHitpoints(numHeartsInInventory);
+	UCharacterMovementComponent*const moveComp = 
+		Cast< UCharacterMovementComponent>(GetMovementComponent());
+	if (moveComp)
+	{
+		//dashParticleComponent->SetWorldLocation(FVector::ZeroVector);
+		//dashParticleComponent->SetRelativeTransform()
+		//dashParticleComponent->Deactivate();
+		//dashParticleComponent->SetActive(dashing);
+		moveComp->MaxWalkSpeed = dashing ? 1000.f : 600.f;
+	}
+	//dashParticleComponent->SetRelativeLocation(FVector::ZeroVector);
+	//if (dashing)
+	//{
+	//	dashParticleComponent->Activate();
+	//}
+	///else
+	///{
+	///	dashParticleComponent->Deactivate();
+	///}
 }
 void AIrone3DPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
