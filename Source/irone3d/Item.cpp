@@ -8,6 +8,8 @@
 #include <Runtime/Engine/Classes/Engine/World.h>
 #include <EngineGlobals.h>
 #include <Runtime/Engine/Classes/Engine/Engine.h>
+#include <Sound/SoundCue.h>
+#include <Kismet/GameplayStatics.h>
 AItem::AItem()
 	:capsuleComponent(CreateDefaultSubobject<UCapsuleComponent>(TEXT("capsule")))
 	,meshComponent(CreateDefaultSubobject<UStaticMeshComponent>(TEXT("mesh")))
@@ -64,6 +66,7 @@ void AItem::onOverlapBegin(UPrimitiveComponent * OverlappedComponent,
 	ensure(gs);
 	if(OtherComp->IsA(UCapsuleComponent::StaticClass()))
 	{
+		UGameplayStatics::PlaySoundAtLocation(world, sfxItemPickup, GetActorLocation());
 		gs->getInventory()->addItem(itemMeta.type);
 		Destroy();
 	}

@@ -11,6 +11,8 @@
 #include "Irone3dGameState.h"
 #include <Engine/StaticMeshActor.h>
 #include "irone3dGameMode.h"
+#include <Kismet/GameplayStatics.h>
+#include <Sound/SoundCue.h>
 ABoss::ABoss()
 	: componentSphere(CreateDefaultSubobject<USphereComponent>(TEXT("sphere")))
 	, componentMesh(CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("mesh")))
@@ -21,7 +23,6 @@ ABoss::ABoss()
 	componentSphere->SetCollisionProfileName("EnemyPawn");
 	componentUnit->addVulnerablePrimitiveComponent(componentSphere);
 	componentUnit->setHitpoints(1);
-	componentUnit->setDestroyOnDie(false);
 	PrimaryActorTick.bCanEverTick = true;
 }
 void ABoss::BeginPlay()
@@ -296,6 +297,7 @@ void ABoss::Tick(float DeltaTime)
 						orbSpawnPos, FRotator::ZeroRotator, params);
 					newOrb->SetActorScale3D(FVector::ZeroVector);
 					orb = newOrb;
+					UGameplayStatics::PlaySoundAtLocation(world, sfxMagicCharge, GetActorLocation());
 				}
 				reachedPatrolLocation = true;
 			}
@@ -317,6 +319,7 @@ void ABoss::Tick(float DeltaTime)
 				{
 					///pOrb->setVelocity();
 					pOrb->shootAt(targetPawn.Get(), FMath::RandBool());
+					UGameplayStatics::PlaySoundAtLocation(world, sfxMagicRelease, GetActorLocation());
 				}
 				orb.Reset();
 			}
@@ -360,6 +363,11 @@ float ABoss::TakeDamage(float DamageAmount,
 	FDamageEvent const& DamageEvent, AController * EventInstigator,
 	AActor * DamageCauser)
 {
+	UWorld const*const world = GetWorld();
+	if (world)
+	{
+		UGameplayStatics::PlaySoundAtLocation(world, sfxHit, GetActorLocation());
+	}
 	return Super::TakeDamage(
 		DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 }

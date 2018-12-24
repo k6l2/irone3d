@@ -28,4 +28,8 @@ private:
 		class USceneComponent* sceneComponent;
 	UPROPERTY(VisibleAnywhere, Category = Combat)
 		float activationTimer;
+	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
+		class USoundCue* sfxSpike;
+	///UPROPERTY(VisibleAnywhere, Category = SpikeTrap)
+	///	bool justTriggered = false;
 };

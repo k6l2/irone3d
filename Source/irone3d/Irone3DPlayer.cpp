@@ -22,6 +22,7 @@
 #include <Runtime/Engine/Classes/Kismet/GameplayStatics.h>
 #include <Runtime/Engine/Classes/Particles/ParticleSystem.h>
 #include <Runtime/Engine/Classes/Particles/ParticleSystemComponent.h>
+#include <Sound/SoundCue.h>
 const FLinearColor AIrone3DPlayer::HURT_OUTLINE_COLOR = { 0.f,0.f,0.f,1.f };
 AIrone3DPlayer::AIrone3DPlayer()
     :cameraBoom           (CreateDefaultSubobject<USpringArmComponent     >(TEXT("CameraBoom")))
@@ -43,7 +44,6 @@ AIrone3DPlayer::AIrone3DPlayer()
 	meshCharacter->SetupAttachment(RootComponent);
     meshAttack->SetupAttachment(RootComponent);
 	attackCombatComponent->SetupAttachment(meshAttack);
-	unitComponent->setDestroyOnDie(false);
 }
 void AIrone3DPlayer::moveForward(float value)
 {
@@ -176,6 +176,11 @@ bool AIrone3DPlayer::isTryingToAttack() const
 }
 void AIrone3DPlayer::attackStart()
 {
+	UWorld*const world = GetWorld();
+	if (world)
+	{
+		UGameplayStatics::PlaySoundAtLocation(world, sfxAttack, GetActorLocation());
+	}
     attackAnimationPlaying = true;
 	attackCombatComponent->startAttack();
 }
@@ -329,6 +334,10 @@ float AIrone3DPlayer::TakeDamage(float DamageAmount,
 {
 	UWorld const*const world = GetWorld();
 	ensure(world);
+	if (world)
+	{
+		UGameplayStatics::PlaySoundAtLocation(world, sfxHit, GetActorLocation());
+	}
 	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
 	ensure(gs);
 	if (world)

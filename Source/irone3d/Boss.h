@@ -64,4 +64,10 @@ private:
 		TWeakObjectPtr<APawn> targetPawn;
 	UPROPERTY(VisibleAnywhere, Category = Boss)
 		TWeakObjectPtr<class ABossOrb> orb;
+	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
+		class USoundCue* sfxHit;
+	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
+		class USoundCue* sfxMagicCharge;
+	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
+		class USoundCue* sfxMagicRelease;
 };

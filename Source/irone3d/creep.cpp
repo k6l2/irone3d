@@ -14,6 +14,8 @@
 #include <Runtime/Engine/Classes/Particles/ParticleSystem.h>
 #include <Runtime/Engine/Classes/Particles/ParticleSystemComponent.h>
 #include "CombatComponent.h"
+#include <Kismet/GameplayStatics.h>
+#include <Sound/SoundCue.h>
 const FLinearColor Acreep::HURT_OUTLINE_COLOR = {1.f,0.f,0.f,1.f};
 const float Acreep::HURT_FLASH_SECONDS = 5.f;
 Acreep::Acreep()
@@ -58,6 +60,8 @@ void Acreep::getOverlappingAggroActors(TArray<AActor*>& outArray) const
 void Acreep::BeginPlay()
 {
 	Super::BeginPlay();
+	ensure(unitComponent);
+	unitComponent->delegateDie.BindUFunction(this, "onUnitDie");
 	unitComponent->addVulnerablePrimitiveComponent(GetCapsuleComponent());
 	if (pawnSense)
     {
@@ -123,6 +127,10 @@ float Acreep::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent,
 	UWorld*const world = GetWorld();
 	if (world)
 	{
+		if (!unitComponent->isDead())
+		{
+			UGameplayStatics::PlaySoundAtLocation(world, sfxHit, GetActorLocation());
+		}
 		auto particleComp =
 			UGameplayStatics::SpawnEmitterAtLocation(world, particleSystemBlood,
 				GetActorLocation());
@@ -160,4 +168,13 @@ float Acreep::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent,
 		}
 	}
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+}
+void Acreep::onUnitDie()
+{
+	UWorld*const world = GetWorld();
+	if (world)
+	{
+		UGameplayStatics::PlaySoundAtLocation(world, sfxDestroyed, GetActorLocation());
+	}
+	Destroy();
 }

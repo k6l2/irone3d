@@ -95,6 +95,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, 
 			meta = (AllowPrivateAccess = "true"))
 		UParticleSystem* particleSystemBlood;
+	UPROPERTY(EditDefaultsOnly, Category = Player)
+		class USoundCue* sfxAttack;
+	UPROPERTY(EditDefaultsOnly, Category = Player)
+		class USoundCue* sfxHit;
 	UMaterialInstanceDynamic* outlineMaterial;
 	UMaterialInstanceDynamic* eyesMaterial;
 	FLinearColor defaultOutlineColor;

@@ -33,7 +33,6 @@ public:
 	void addVulnerablePrimitiveComponent(UPrimitiveComponent* comp);
 	void setHitpoints(float hp);
 	bool isDead() const;
-	void setDestroyOnDie(bool value);
 	float getGlobalHitInvincibleDuration() const;
 protected:
 	virtual void BeginPlay() override;
@@ -71,7 +70,4 @@ private:
 		//	add the Character's capsule component to the list of vulnerable 
 		//	components...
 		bool hasBegunPlay = false;
-	///TODO: delete this since we now have a die delegate!
-	UPROPERTY(EditAnywhere, Category = Unit)
-		bool destroyOnDie = true;
 };

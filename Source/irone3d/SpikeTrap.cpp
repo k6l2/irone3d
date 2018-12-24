@@ -6,6 +6,8 @@
 #include <EngineGlobals.h>
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include "Irone3DPlayer.h"
+#include <Kismet/GameplayStatics.h>
+#include <Sound/SoundCue.h>
 ASpikeTrap::ASpikeTrap()
 	:combatComponent(CreateDefaultSubobject<UCombatComponent>(TEXT("combatComponent")))
 	,skeletalMeshComponent(CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("skeletalMeshComponent")))
@@ -42,6 +44,11 @@ void ASpikeTrap::startCombat() const
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red,
 	//	FString::Printf(TEXT("Get Fucked!")));
 	combatComponent->startAttack();
+	UWorld const*const world = GetWorld();
+	if (world)
+	{
+		UGameplayStatics::PlaySoundAtLocation(world, sfxSpike, GetActorLocation());
+	}
 }
 void ASpikeTrap::stopCombat() const
 {

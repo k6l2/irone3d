@@ -36,14 +36,6 @@ bool UCombatComponent::isAttackActive() const
 {
 	return attackActive || alwaysAttacking;
 }
-bool UCombatComponent::destroyOwnerOnDamageDealt() const
-{
-	return m_destroyOwnerOnDamageDealt;
-}
-void UCombatComponent::setDestroyOnDealDamage(bool value)
-{
-	m_destroyOwnerOnDamageDealt = value;
-}
 void UCombatComponent::setAlwaysAttacking(bool value)
 {
 	alwaysAttacking = value;

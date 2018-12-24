@@ -48,10 +48,6 @@ void UUnitComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		if (hitpoints <= 0)
 		{
 			delegateDie.ExecuteIfBound();
-			if (destroyOnDie)
-			{
-				owner->Destroy();
-			}
 		}
 		else
 		{
@@ -59,10 +55,7 @@ void UUnitComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 			///	hitpoints, globalHitInvincibleDuration);
 			globalHitInvincibleTimer = globalHitInvincibleDuration;
 		}
-		if (combatComp->destroyOwnerOnDamageDealt())
-		{
-			combatOwner->Destroy();
-		}
+		combatComp->delegateDamageDealt.ExecuteIfBound();
 	}
 }
 void UUnitComponent::addVulnerablePrimitiveComponent(UPrimitiveComponent* comp)
@@ -80,10 +73,6 @@ void UUnitComponent::setHitpoints(float hp)
 bool UUnitComponent::isDead() const
 {
 	return hitpoints <= 0;
-}
-void UUnitComponent::setDestroyOnDie(bool value)
-{
-	destroyOnDie = value;
 }
 void UUnitComponent::onUnitOverlapBegin(
 	UPrimitiveComponent* OverlappedComponent,

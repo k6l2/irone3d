@@ -55,4 +55,6 @@ private:
 		class UStaticMesh* meshKey;
 	UPROPERTY(EditAnywhere, Category = Meta)
 		FItemMeta itemMeta;
+	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
+		class USoundCue* sfxItemPickup;
 };

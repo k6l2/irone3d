@@ -10,6 +10,8 @@
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include <DrawDebugHelpers.h>
 #include "irone3d.h"
+#include <Kismet/GameplayStatics.h>
+#include <Sound/SoundCue.h>
 ATurret::ATurret()
 	: sceneRoot   (CreateDefaultSubobject<USceneComponent         >(TEXT("sceneRoot")))
 	, skeletalMesh(CreateDefaultSubobject<USkeletalMeshComponent  >(TEXT("skeletalMesh")))
@@ -92,6 +94,7 @@ void ATurret::Tick(float deltaSeconds)
 				//barrelRot.Add(-90.f, 0.f, 0.f);
 				// spawn TurretLaser actor into the world at the barrel position //
 				FActorSpawnParameters projectileParams;
+				UGameplayStatics::PlaySoundAtLocation(world, sfxShoot, GetActorLocation());
 				ATurretLaser* const laser = world->SpawnActor<ATurretLaser>(
 					projectileClass.Get(),
 					barrelLocation, barrelRot, projectileParams);

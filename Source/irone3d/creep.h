@@ -26,7 +26,9 @@ protected:
 	virtual void BeginPlay() override;
 private:
     UFUNCTION(Category = Sensory)
-    void onSeePawn(APawn* pawn);
+		void onSeePawn(APawn* pawn);
+    UFUNCTION()
+		void onUnitDie();
 private:
 	float hurtFlashSeconds;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components,
@@ -47,6 +49,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Components, 
 			meta = (AllowPrivateAccess = "true"))
 		class UCombatComponent* componentCombat;
+	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
+		class USoundCue* sfxHit;
+	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
+		class USoundCue* sfxDestroyed;
 	UMaterialInstanceDynamic* outlineMaterial;
 	UMaterialInstanceDynamic* eyesMaterial;
 	FLinearColor defaultOutlineColor;

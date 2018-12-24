@@ -43,6 +43,8 @@ private:
 		TSubclassOf<class AActor> projectileClass;
 	UPROPERTY()
 		class APawn* pawnTarget;
+	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
+		class USoundCue* sfxShoot;
 	FVector aimVector;
 	float cooldown;
 	bool animationActive;

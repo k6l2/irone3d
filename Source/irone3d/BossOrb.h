@@ -13,9 +13,13 @@ public:
 	virtual float TakeDamage(float DamageAmount,
 		FDamageEvent const& DamageEvent, AController * EventInstigator,
 		AActor * DamageCauser) override;
+	virtual void BeginDestroy() override;
 	void shootAt(APawn* targetPawn, bool reflectable);
 protected:
 	virtual void BeginPlay() override;
+private:
+	UFUNCTION()
+		void onDamageDealt();
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components,
 			meta = (AllowPrivateAccess = "true"))
@@ -39,4 +43,10 @@ private:
 		bool isReflectable;
 	UPROPERTY(VisibleAnywhere, Category = BossOrb)
 		class UMaterialInstanceDynamic* materialUnreflectable;
+	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
+		class USoundCue* sfxHitWall;
+	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
+		class USoundCue* sfxReflectAttack;
+	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
+		class USoundCue* sfxDestroyed;
 };

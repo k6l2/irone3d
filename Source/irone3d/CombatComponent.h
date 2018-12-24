@@ -11,6 +11,7 @@
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
 #include "CombatComponent.generated.h"
+DECLARE_DELEGATE(FCombatDealtDamageDelegate);
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class IRONE3D_API UCombatComponent : public USceneComponent
 {
@@ -25,18 +26,16 @@ public:
 	bool registerHit(class UUnitComponent* unitComp);
 	void stopAttack();
 	bool isAttackActive() const;
-	bool destroyOwnerOnDamageDealt() const;
-	void setDestroyOnDealDamage(bool value);
 	void setAlwaysAttacking(bool value);
 protected:
 	virtual void BeginPlay() override;
+public:
+	FCombatDealtDamageDelegate delegateDamageDealt;
 private:
 	UPROPERTY(EditAnywhere, Transient, Category = Combat)
 		bool attackActive = false;
 	UPROPERTY(EditAnywhere, Category = Combat)
 		bool alwaysAttacking = false;
-	UPROPERTY(EditAnywhere, Category = Combat)
-		bool m_destroyOwnerOnDamageDealt = false;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, 
 			meta = (AllowPrivateAccess = "true"))
 		float damage = 1.f;
