@@ -37,4 +37,10 @@ private:
 		int32 frameParamIndex;
 	UPROPERTY(EditAnywhere, Category = BreakableFloor)
 		bool manualTrigger = false;
+	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
+		class USoundCue* sfxCrack;
+	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
+		class USoundCue* sfxDestroyed;
+	UPROPERTY(VisibleAnywhere, Category = BreakableFloor)
+		float prevFrame = 0;
 };

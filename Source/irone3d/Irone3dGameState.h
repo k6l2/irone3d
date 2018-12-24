@@ -9,7 +9,7 @@ class IRONE3D_API AIrone3dGameState : public AGameStateBase
 	GENERATED_BODY()
 public:
 	AIrone3dGameState();
-	void generateLevelMap(UWorld* world);
+	void generateLevelMap(UWorld* world, bool debugRoomLoaded);
 	FString currentRoomLevelName();
 	FString adjacentRoomLevelName(const FVector& exitVec);
 	void addActorToCurrentRoom(AActor* actor);

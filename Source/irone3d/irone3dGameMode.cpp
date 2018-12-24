@@ -71,9 +71,25 @@ void Airone3dGameMode::InitGameState()
 	UWorld*const world = GetWorld();
 	ensure(world);
 	// Generate the level map //
+	bool testRoomLoaded = false;
+	for (TObjectIterator<AActor> actIt; actIt; ++actIt)
+	{
+		if (actIt->GetWorld() != world)
+		{
+			continue;
+		}
+		//UE_LOG(LogTemp, Warning, TEXT("InitGameState: actor name=%s"), *actIt->GetName());
+		if (actIt->IsA(ARoomTransitionTrigger::StaticClass()))
+		{
+			testRoomLoaded = true;
+			break;
+		}
+	}
+	UE_LOG(LogTemp, Warning, TEXT("A pre-loaded room's transition trigger has \
+been detected! Assuming we are doing debug testing!"));
 	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
 	ensure(gs);
-	gs->generateLevelMap(world);
+	gs->generateLevelMap(world, testRoomLoaded);
 	UIrone3dGameInstance*const gi = 
 		Cast<UIrone3dGameInstance>(GetGameInstance());
 	ensure(gi);

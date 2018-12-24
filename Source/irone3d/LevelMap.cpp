@@ -61,7 +61,8 @@ bool FLevelGenNode::hasOneExit() const
 {
 	return exitCount() == 1;
 }
-void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber)
+void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber, 
+	bool debugRoomLoaded)
 {
 	this->floorNumber = floorNumber;
 	hasSpawnedKeyYet = false;
@@ -106,6 +107,10 @@ void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber)
 	//	to be accumulated during the algorithm
 	finalLevelLayout.Empty();
 	finalLevelLayout.SetNum(ROOM_ARRAY_SIZE*ROOM_ARRAY_SIZE);
+	if (debugRoomLoaded)
+	{
+		return;
+	}
 	std::set<int32> pickedNodeIndexes;
 	// sort the list of edges based on weight
 	auto edgeWeightSort = [](const LevelGenEdge& a, const LevelGenEdge& b)->bool

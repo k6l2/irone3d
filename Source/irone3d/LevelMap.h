@@ -61,7 +61,8 @@ private:
 		float weight;
 	};
 public:
-	void generateNewLevel(UWorld* world, uint8 floorNumber);
+	void generateNewLevel(UWorld* world, uint8 floorNumber, 
+		bool debugRoomLoaded);
 	RoomCoord getStartCoord() const;
 	RoomCoord getCurrCoord() const;
 	// sets the "hasBeenVisited" flag in the new room to true

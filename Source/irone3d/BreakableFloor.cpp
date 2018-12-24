@@ -12,6 +12,8 @@
 #include <DestructibleComponent.h>
 #include <Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h>
 #include <Runtime/Engine/Classes/Components/DecalComponent.h>
+#include <Kismet/GameplayStatics.h>
+#include <Sound/SoundCue.h>
 ABreakableFloor::ABreakableFloor()
 	: boxComponentRoot(CreateDefaultSubobject<UBoxComponent  >(TEXT("boxComponentRoot")))
 	, decalComponent  (CreateDefaultSubobject<UDecalComponent>(TEXT("decalComponent")))
@@ -30,7 +32,7 @@ void ABreakableFloor::Tick(float DeltaTime)
 	{
 		return;
 	}
-	///UWorld* const world = GetWorld();
+	UWorld const*const world = GetWorld();
 	///if (!ensure(floorActor) || !ensure(world))
 	///{
 	///	/// GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red,
@@ -64,18 +66,34 @@ void ABreakableFloor::Tick(float DeltaTime)
 	{
 		integritySeconds -= DeltaTime;
 	}
+	///FMaterialParameterInfo paramInfo;
+	///paramInfo.Index = frameParamIndex;
+	///paramInfo.Name = "frame";
+	///float prevFrame;
+	///if (!decalMaterial->GetScalarParameterValue(paramInfo, prevFrame, true))
+	///{
+	///	UE_LOG(LogTemp, Warning, TEXT("failed to get prevFrame!"));
+	///}
+	float currFrame;
 	if (integritySeconds > 2.95f)
 	{
-		decalMaterial->SetScalarParameterByIndex(frameParamIndex, 0.f);
+		currFrame = 0;
 	}
 	else if (integritySeconds > 1.f)
 	{
-		decalMaterial->SetScalarParameterByIndex(frameParamIndex, 1.f);
+		currFrame = 1;
 	}
 	else
 	{
-		decalMaterial->SetScalarParameterByIndex(frameParamIndex, 2.f);
+		currFrame = 2;
 	}
+	decalMaterial->SetScalarParameterByIndex(frameParamIndex, currFrame);
+	if (prevFrame != currFrame && world)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("prevFrame=%f currFrame=%f"), prevFrame, currFrame);
+		UGameplayStatics::PlaySoundAtLocation(world, sfxCrack, GetActorLocation());
+	}
+	prevFrame = currFrame;
 	if (integritySeconds <= 0.f)
 	{
 		trigger();
@@ -83,7 +101,7 @@ void ABreakableFloor::Tick(float DeltaTime)
 }
 void ABreakableFloor::trigger()
 {
-	UWorld* const world = GetWorld();
+	UWorld *const world = GetWorld();
 	if (!ensure(floorActor) || !ensure(world))
 	{
 		/// GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red,
@@ -108,6 +126,7 @@ void ABreakableFloor::trigger()
 		destructible->GetDestructibleComponent()->ApplyRadiusDamage(
 			100.f, destructible->GetActorLocation(), 250.f, 2500.f, true);
 	}
+	UGameplayStatics::PlaySoundAtLocation(world, sfxDestroyed, GetActorLocation());
 }
 void ABreakableFloor::BeginPlay()
 {

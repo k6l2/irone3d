@@ -8,13 +8,13 @@ AIrone3dGameState::AIrone3dGameState()
 	, inventory(CreateDefaultSubobject<UInventory>(TEXT("inventory")))
 {
 }
-void AIrone3dGameState::generateLevelMap(UWorld* world)
+void AIrone3dGameState::generateLevelMap(UWorld* world, bool debugRoomLoaded)
 {
 	UIrone3dGameInstance*const gi = 
 		Cast<UIrone3dGameInstance>(GetGameInstance());
 	ensure(gi);
 	nextFloorNumber = gi->getNextFloorNumber();
-	levelMap->generateNewLevel(world, nextFloorNumber);
+	levelMap->generateNewLevel(world, nextFloorNumber, debugRoomLoaded);
 	nextFloorNumber++;
 	gi->setNextFloorNumber(nextFloorNumber);
 }
