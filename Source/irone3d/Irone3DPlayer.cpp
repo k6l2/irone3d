@@ -44,15 +44,6 @@ AIrone3DPlayer::AIrone3DPlayer()
     meshAttack->SetupAttachment(RootComponent);
 	attackCombatComponent->SetupAttachment(meshAttack);
 	unitComponent->setDestroyOnDie(false);
-	///dashParticleComponent->SetupAttachment(RootComponent);
-	///dashParticleComponent->bAutoManageAttachment = true;
-	///dashParticleComponent->bAutoActivate = false;
-	///dashParticleComponent->SetHiddenInGame(false);
-	//////FAttachmentTransformRules dashParticleAttachTransformRules(
-	//////	EAttachmentRule::SnapToTarget, false);
-	//////dashParticleComponent->AttachToComponent(meshCharacter, 
-	//////	dashParticleAttachTransformRules);
-	///dashParticleComponent->ActivateSystem();
 }
 void AIrone3DPlayer::moveForward(float value)
 {
@@ -169,9 +160,7 @@ void AIrone3DPlayer::tryAttackEnd()
 void AIrone3DPlayer::dashStart()
 {
 	dashing = true;
-	//dashParticleComponent->SetActive(true, true);
 	dashParticleComponent->Activate();
-	//dashParticleComponent->ForceUpdateBounds();
 }
 void AIrone3DPlayer::dashEnd()
 {
@@ -228,7 +217,6 @@ void AIrone3DPlayer::cutSceneStopVelocity()
 void AIrone3DPlayer::BeginPlay()
 {
 	Super::BeginPlay();
-	///dashParticleComponent->SetupAttachment(RootComponent);
 	dashParticleComponent->SetRelativeLocation(FVector::ZeroVector);
 	FAttachmentTransformRules attachRules(EAttachmentRule::SnapToTarget, true);
 	dashParticleComponent->AttachToComponent(RootComponent, attachRules);
@@ -328,21 +316,8 @@ void AIrone3DPlayer::Tick(float DeltaTime)
 		Cast< UCharacterMovementComponent>(GetMovementComponent());
 	if (moveComp)
 	{
-		//dashParticleComponent->SetWorldLocation(FVector::ZeroVector);
-		//dashParticleComponent->SetRelativeTransform()
-		//dashParticleComponent->Deactivate();
-		//dashParticleComponent->SetActive(dashing);
 		moveComp->MaxWalkSpeed = dashing ? 1000.f : 600.f;
 	}
-	//dashParticleComponent->SetRelativeLocation(FVector::ZeroVector);
-	//if (dashing)
-	//{
-	//	dashParticleComponent->Activate();
-	//}
-	///else
-	///{
-	///	dashParticleComponent->Deactivate();
-	///}
 }
 void AIrone3DPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
