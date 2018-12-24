@@ -90,6 +90,13 @@ public:
 	bool getHasSpawnedBossDoorYet() const;
 	void setHasSpawnedBossDoorYet(bool value);
 private:
+	// iterate over each room directory and build a list of room names that
+	//	aren't a special room name.
+	// Special room names are "B" (boss room) "S" (start room) and "TEMPLATE"
+	TArray<TArray<FString>> findUniqueRoomNamesPerType() const;
+	///TArray<uint32> findNumberOfUniqueRoomsPerType();
+	FString findUniqueRoomName(const FLevelGenNode& node, 
+		TArray<TArray<FString>>const& numUniqueRoomNamesPerType) const;
 	FString findLevelDir(const FLevelGenNode& node);
 	FQuat findLevelRotation(const FLevelGenNode& node);
 	void exitVecToOffsets(const FVector& exitVec,

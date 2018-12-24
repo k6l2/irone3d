@@ -9,6 +9,7 @@
 #include <tuple>
 #include <queue>
 #include "irone3dGameMode.h"
+#include <Engine/ObjectLibrary.h>
 const uint8 ULevelMap::ROOM_ARRAY_SIZE = 5;
 const float ULevelMap::ROOM_SIZE = 2500;
 ULevelMap::RoomCoord::RoomCoord(uint8 x, uint8 y)
@@ -345,6 +346,10 @@ void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber)
 		uint8(startI%ROOM_ARRAY_SIZE),
 		uint8(startI/ROOM_ARRAY_SIZE) };
 	currCoord = startCoord;
+	// Before loading the actual level streams, we need to figure out how many
+	//	of each type of room there are in the project //
+	const TArray<TArray<FString>> uniqueRoomNamesPerType = 
+		findUniqueRoomNamesPerType();
 	// Finally, actually load the Unreal Engine Levels ////////////////////////
 	for (uint8 y = 0; y < ROOM_ARRAY_SIZE; y++)
 	{
@@ -358,19 +363,21 @@ void ULevelMap::generateNewLevel(UWorld* world, uint8 floorNumber)
 			const RoomCoord rc{ x,y };
 			FString levelDir = findLevelDir(node);
 			const FQuat levelQuat = findLevelRotation(node);
+			const FString roomNamePostfix = rc == startCoord ?
+				FString("S") : node.bossRoom ?
+				FString("B") : 
+				findUniqueRoomName(node, uniqueRoomNamesPerType);
 			// we now should know what type of room to load (levelDir)
 			//	as well as where we need to put it (r & c)
-			///TODO: figure out how many unique rooms there are and choose a 
-			///	random # in this range
-			FString roomName = levelDir + FString::FromInt(0);
-			if (rc == startCoord)
-			{
-				roomName = levelDir + FString("S");
-			}
-			else if (node.bossRoom)
-			{
-				roomName = levelDir + FString("B");
-			}
+			const FString roomName = levelDir + roomNamePostfix;
+			///if (rc == startCoord)
+			///{
+			///	roomName = levelDir + FString("S");
+			///}
+			///else if (node.bossRoom)
+			///{
+			///	roomName = levelDir + FString("B");
+			///}
 			const FString uniqueRoomInstanceString =
 				"room" + FString::FromInt(y*ROOM_ARRAY_SIZE + x);
 			UE_LOG(LogTemp, Warning, 
@@ -536,6 +543,93 @@ bool ULevelMap::getHasSpawnedBossDoorYet() const
 void ULevelMap::setHasSpawnedBossDoorYet(bool value)
 {
 	hasSpawnedBossDoorYet = value;
+}
+TArray<TArray<FString>> ULevelMap::findUniqueRoomNamesPerType() const
+{
+	static const TArray<FString> ROOM_DIRECTORIES = {
+		TEXT("/Game/levels/proceduralRooms/N"   ),
+		TEXT("/Game/levels/proceduralRooms/NS"  ),
+		TEXT("/Game/levels/proceduralRooms/NE"  ),
+		TEXT("/Game/levels/proceduralRooms/NES" ),
+		TEXT("/Game/levels/proceduralRooms/NESW")
+	};
+	TArray<TArray<FString>> retVal;
+	for (auto& dir : ROOM_DIRECTORIES)
+	{
+		retVal.Add({});
+		UObjectLibrary* objLib = UObjectLibrary::CreateLibrary(
+			UWorld::StaticClass(), false, true);
+		objLib->LoadAssetDataFromPath(dir);
+		TArray<FAssetData> assetData;
+		objLib->GetAssetDataList(assetData);
+		for (auto& assetDat : assetData)
+		{
+			///UE_LOG(LogTemp, Warning, TEXT("found map \"%s\""),
+			///	*assetDat.AssetName.ToString());
+			FString trimmedName;
+			assetDat.AssetName.ToString().Split(
+				TEXT("-"), nullptr, &trimmedName);
+			if (trimmedName == TEXT("B") ||
+				trimmedName == TEXT("S") ||
+				trimmedName == TEXT("TEMPLATE"))
+			{
+				continue;
+			}
+			retVal.Last().Add(trimmedName);
+		}
+	}
+	return retVal;
+}
+/// TArray<uint32> ULevelMap::findNumberOfUniqueRoomsPerType()
+/// {
+/// 	TArray<uint32> retVal;
+/// 	UObjectLibrary* objLib = UObjectLibrary::CreateLibrary(
+/// 		UWorld::StaticClass(), false, true);
+/// 	objLib->LoadAssetDataFromPath(TEXT("/Game/levels/proceduralRooms/N"));
+/// 	TArray<FAssetData> assetData;
+/// 	objLib->GetAssetDataList(assetData);
+/// 	///for (auto& assetDat : assetData)
+/// 	///{
+/// 	///	UE_LOG(LogTemp, Warning, TEXT("found map \"%s\""),
+/// 	///		*assetDat.AssetName.ToString());
+/// 	///	///assetDat.AssetName.ToString();
+/// 	///}
+/// 	return retVal;
+/// }
+FString ULevelMap::findUniqueRoomName(const FLevelGenNode& node,
+	TArray<TArray<FString>>const& numUniqueRoomNamesPerType) const
+{
+	int8 numEdges = 0;
+	if (node.hasNorth) numEdges++;
+	if (node.hasSouth) numEdges++;
+	if (node.hasEast ) numEdges++;
+	if (node.hasWest ) numEdges++;
+	int32 roomNameArrayIndex;
+	switch (numEdges)
+	{
+	case 1:
+		roomNameArrayIndex = 0;
+		break;
+	case 2:
+		if ((node.hasNorth && node.hasSouth) ||
+			(node.hasEast && node.hasWest))
+		{
+			roomNameArrayIndex = 1;
+			break;
+		}
+		roomNameArrayIndex = 2;
+		break;
+	case 3:
+		roomNameArrayIndex = 3;
+		break;
+	case 4:
+	default:
+		roomNameArrayIndex = 4;
+		break;
+	}
+	const int32 randIndex = FMath::RandRange(0, 
+		numUniqueRoomNamesPerType[roomNameArrayIndex].Num() - 1);
+	return numUniqueRoomNamesPerType[roomNameArrayIndex][randIndex];
 }
 FString ULevelMap::findLevelDir(const FLevelGenNode & node)
 {
