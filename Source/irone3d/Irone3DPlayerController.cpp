@@ -11,8 +11,8 @@
 #include <Engine/StaticMeshActor.h>
 #include "RoomTransitionTrigger.h"
 AIrone3DPlayerController::AIrone3DPlayerController()
-    :baseTurnRate(45)
-    ,baseLookUpRate(45)
+    :baseTurnRate(80)
+    ,baseLookUpRate(80)
     ,deadzone(0.01)
 	,autoMoveToLocation(false)
 {

@@ -71,6 +71,8 @@ void Airone3dGameMode::InitGameState()
 	UWorld*const world = GetWorld();
 	ensure(world);
 	// Generate the level map //
+	// This is a hack for finding out if we are debugging a pre-loaded room:
+	//	just find any loaded instances of room transition triggers //
 	bool testRoomLoaded = false;
 	for (TObjectIterator<AActor> actIt; actIt; ++actIt)
 	{
@@ -99,6 +101,19 @@ been detected! Assuming we are doing debug testing!"));
 void Airone3dGameMode::StartPlay()
 {
 	Super::StartPlay();
+	// Unreal engine's navmeshes suck and need to be forced to rebuild manually
+	//	all the time, apparently //
+	UWorld *const world = GetWorld();
+	ensure(world);
+	///if (testRoomLoaded)
+	{
+		UNavigationSystemV1* const navSys =
+			FNavigationSystem::GetCurrent<UNavigationSystemV1>(world);
+		if (navSys)
+		{
+			navSys->Build();
+		}
+	}
 }
 void Airone3dGameMode::Tick(float deltaSeconds)
 {
