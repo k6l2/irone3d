@@ -69,7 +69,7 @@ void Airone3dGameMode::InitGameState()
 {
 	Super::InitGameState();
 	UWorld*const world = GetWorld();
-	ensure(world);
+	if (!ensure(world)) return;
 	// Generate the level map //
 	// This is a hack for finding out if we are debugging a pre-loaded room:
 	//	just find any loaded instances of room transition triggers //
@@ -87,16 +87,20 @@ void Airone3dGameMode::InitGameState()
 			break;
 		}
 	}
-	UE_LOG(LogTemp, Warning, TEXT("A pre-loaded room's transition trigger has \
-been detected! Assuming we are doing debug testing!"));
+///	UE_LOG(LogTemp, Warning, TEXT("A pre-loaded room's transition trigger has \
+///been detected! Assuming we are doing debug testing!"));
 	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
-	ensure(gs);
-	gs->generateLevelMap(world, testRoomLoaded);
-	UIrone3dGameInstance*const gi = 
-		Cast<UIrone3dGameInstance>(GetGameInstance());
-	ensure(gi);
-	gs->getInventory()->setItemCounts(gi->getItemCounts());
-	updateMinimapWidget(gs->getLevelMap());
+	if (gs)
+	{
+		gs->generateLevelMap(world, testRoomLoaded);
+		UIrone3dGameInstance*const gi = 
+			Cast<UIrone3dGameInstance>(GetGameInstance());
+		if (gi)
+		{
+			gs->getInventory()->setItemCounts(gi->getItemCounts());
+		}
+		updateMinimapWidget(gs->getLevelMap());
+	}
 }
 void Airone3dGameMode::StartPlay()
 {

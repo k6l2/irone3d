@@ -40,6 +40,7 @@ public:
 		void canAttackEnd();
     UFUNCTION(BlueprintCallable, Category=Animation)
 		bool isSleeping() const;
+	void setSleeping(bool value);
     void tryAttackStart();
     void tryAttackEnd();
     void dashStart();

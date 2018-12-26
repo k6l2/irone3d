@@ -153,6 +153,10 @@ bool AIrone3DPlayer::isSleeping() const
 {
 	return sleeping;
 }
+void AIrone3DPlayer::setSleeping(bool value)
+{
+	sleeping = value;
+}
 void AIrone3DPlayer::tryAttackStart()
 {
     tryingAttack = true;
@@ -262,7 +266,10 @@ void AIrone3DPlayer::onCapsuleHit(UPrimitiveComponent* HitComponent,
 	ensure(world);
 	AIrone3dGameState const*const gs = 
 		world->GetGameState<AIrone3dGameState>();
-	ensure(gs);
+	if (!ensure(gs))
+	{
+		return;
+	}
 	if (OtherActor->IsA(classLockedDoor) &&
 		gs->getInventory()->removeItem(ItemType::KEY))
 	{

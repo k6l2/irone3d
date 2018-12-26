@@ -12,11 +12,13 @@ void AIrone3dGameState::generateLevelMap(UWorld* world, bool debugRoomLoaded)
 {
 	UIrone3dGameInstance*const gi = 
 		Cast<UIrone3dGameInstance>(GetGameInstance());
-	ensure(gi);
-	nextFloorNumber = gi->getNextFloorNumber();
-	levelMap->generateNewLevel(world, nextFloorNumber, debugRoomLoaded);
-	nextFloorNumber++;
-	gi->setNextFloorNumber(nextFloorNumber);
+	if (gi)
+	{
+		nextFloorNumber = gi->getNextFloorNumber();
+		levelMap->generateNewLevel(world, nextFloorNumber, debugRoomLoaded);
+		nextFloorNumber++;
+		gi->setNextFloorNumber(nextFloorNumber);
+	}
 }
 FString AIrone3dGameState::currentRoomLevelName()
 {
