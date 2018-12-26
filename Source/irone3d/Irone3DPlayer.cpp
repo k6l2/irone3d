@@ -149,6 +149,10 @@ void AIrone3DPlayer::canAttackEnd()
 {
     canAttack = false;
 }
+bool AIrone3DPlayer::isSleeping() const
+{
+	return sleeping;
+}
 void AIrone3DPlayer::tryAttackStart()
 {
     tryingAttack = true;
@@ -313,10 +317,16 @@ void AIrone3DPlayer::Tick(float DeltaTime)
 		eyesMaterial->SetVectorParameterValue("color", outlineColor);
 	}
 	///UE_LOG(LogTemp, Warning, TEXT("WTF M8???"));
-	gm->updateCompassWidget(camera->GetForwardVector());
-	const int32 numHeartsInInventory =
-		gs->getInventory()->getItemCount(ItemType::HEART);
-	unitComponent->setHitpoints(numHeartsInInventory);
+	if (gm)
+	{
+		gm->updateCompassWidget(camera->GetForwardVector());
+	}
+	if (gs)
+	{
+		const int32 numHeartsInInventory =
+			gs->getInventory()->getItemCount(ItemType::HEART);
+		unitComponent->setHitpoints(numHeartsInInventory);
+	}
 	UCharacterMovementComponent*const moveComp = 
 		Cast< UCharacterMovementComponent>(GetMovementComponent());
 	if (moveComp)

@@ -38,6 +38,8 @@ public:
 		void canAttackStart();
     UFUNCTION(BlueprintCallable, Category=Animation)
 		void canAttackEnd();
+    UFUNCTION(BlueprintCallable, Category=Animation)
+		bool isSleeping() const;
     void tryAttackStart();
     void tryAttackEnd();
     void dashStart();
@@ -110,4 +112,6 @@ private:
     bool tryingAttack;
     bool dashing = false;
     bool attackAnimationPlaying;
+	UPROPERTY(EditAnywhere, Category = Player)
+		bool sleeping = false;
 };
