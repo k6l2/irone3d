@@ -58,11 +58,13 @@ void Airone3dGameMode::InitGame(const FString & MapName,
 	cameraSpawnParams.Name = TEXT("cameraRoomTransitions");
 	transitionCamera = world->SpawnActor<ACameraActor>(cameraSpawnParams);
 	// create HUD widget //
-	check(classHUD);
-	widgetHUD = CreateWidget<UUserWidget>(world, classHUD);
-	if (widgetHUD)
+	if (ensure(classHUD))
 	{
-		widgetHUD->AddToViewport();
+		widgetHUD = CreateWidget<UUserWidget>(world, classHUD);
+		if (widgetHUD)
+		{
+			widgetHUD->AddToViewport();
+		}
 	}
 }
 void Airone3dGameMode::InitGameState()

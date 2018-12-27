@@ -5,6 +5,7 @@
 #include <GameFramework/CharacterMovementComponent.h>
 #include <Kismet/GameplayStatics.h>
 #include <Engine/World.h>
+#include "Irone3dMainMenuGameMode.h"
 void AMainMenuController::Tick(float deltaSeconds)
 {
 	Super::Tick(deltaSeconds);
@@ -14,6 +15,9 @@ void AMainMenuController::Tick(float deltaSeconds)
 	if (!ensure(playerActor)) return;
 	UWorld const*const world = GetWorld();
 	if (!ensure(world)) return;
+	AIrone3dMainMenuGameMode* gm = 
+		world->GetAuthGameMode<AIrone3dMainMenuGameMode>();
+	if (!ensure(gm)) return;
 	if (playerWokenUp)
 	{
 		if (wakeUpDelaySeconds > 0)
@@ -44,10 +48,12 @@ void AMainMenuController::Tick(float deltaSeconds)
 			fadeoutSeconds -= deltaSeconds;
 			camPawn->moveToPanTarget2();
 			camPawn->pitchStraightDown(deltaSeconds);
+			FLinearColor color(0, 0, 0, 1.f -
+				FMath::Clamp(fadeoutSeconds / fadeoutSecondsTotal, 0.f, 1.f));
+			gm->setFullscreenTextureColor(color);
 		}
 		else
 		{
-			///TODO: fade out the screen
 			UGameplayStatics::OpenLevel(world, "procGenPersist");
 		}
 	}
