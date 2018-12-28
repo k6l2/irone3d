@@ -15,6 +15,11 @@ void UUnitComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	{
 		globalHitInvincibleTimer -= DeltaTime;
 	}
+	if (invulnerable)
+	{
+		collidingCombatComponents.Empty();
+		return;
+	}
 	AActor*const owner = GetOwner();
 	ensure(owner);
 	//if (collidingCombatComponents.Num() > 0)
@@ -40,12 +45,15 @@ void UUnitComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		const float damage = combatComp->getDamage();
 		auto combatOwner = combatComp->GetOwner();
 		auto instigator = combatOwner->GetInstigatorController();
-		hitpoints -= damage;
+		if (!immortal)
+		{
+			hitpoints -= damage;
+		}
 		//UE_LOG(LogTemp, Warning, TEXT("%f damage dealt! hitpoints=%f"),
 		//	damage, hitpoints);
 		FDamageEvent dmgEvent;
 		owner->TakeDamage(damage, dmgEvent, instigator, combatOwner);
-		if (hitpoints <= 0)
+		if (hitpoints <= 0 && !immortal)
 		{
 			delegateDie.ExecuteIfBound();
 		}
@@ -118,6 +126,14 @@ void UUnitComponent::bindOverlapsToComponent(UPrimitiveComponent* component)
 float UUnitComponent::getGlobalHitInvincibleDuration() const
 {
 	return globalHitInvincibleDuration;
+}
+void UUnitComponent::setInvulnerable(bool value)
+{
+	invulnerable = value;
+}
+void UUnitComponent::setImmortal(bool value)
+{
+	immortal = value;
 }
 void UUnitComponent::BeginPlay()
 {

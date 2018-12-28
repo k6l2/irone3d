@@ -34,6 +34,8 @@ public:
 	void setHitpoints(float hp);
 	bool isDead() const;
 	float getGlobalHitInvincibleDuration() const;
+	void setInvulnerable(bool value);
+	void setImmortal(bool value);
 protected:
 	virtual void BeginPlay() override;
 private:
@@ -63,6 +65,15 @@ private:
 		TArray<class UCombatComponent*> collidingCombatComponents;
 	UPROPERTY(VisibleAnywhere, Category = Unit)
 		TArray<class UPrimitiveComponent*> vulnerableComponents;
+	UPROPERTY(VisibleAnywhere, Category = Unit)
+		// if this is set to true, combat events are not even considered for
+		//	this unit.
+		bool invulnerable = false;
+	UPROPERTY(VisibleAnywhere, Category = Unit)
+		// Unlike the invulnerable flag, this will allow damage events to 
+		//	occur, while still preventing the unit from losing hitpoints.
+		//	delegateDie is also guaranteed to never be called if this is set
+		bool immortal = false;
 	UPROPERTY(Transient)
 		// This variable is a hack that will allow us to call 
 		//	addVulnerablePrimitiveComponent in BeginPlay instead of the

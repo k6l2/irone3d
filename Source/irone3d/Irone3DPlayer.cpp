@@ -227,6 +227,11 @@ void AIrone3DPlayer::cutSceneStopVelocity()
 	ensure(movementComp);
 	movementComp->Velocity *= 0.9f;
 }
+void AIrone3DPlayer::setInvulnerable(bool value)
+{
+	if (!ensure(unitComponent)) return;
+	unitComponent->setInvulnerable(value);
+}
 void AIrone3DPlayer::BeginPlay()
 {
 	Super::BeginPlay();

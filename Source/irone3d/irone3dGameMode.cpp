@@ -229,6 +229,8 @@ void Airone3dGameMode::startRoomTransition(ARoomTransitionTrigger* trigger)
 	ensure(ironePc);
 	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
 	ensure(gs);
+	// during any transition, the player is invulnerable!
+	player->setInvulnerable(true);
     /*
 		1 ) Get the FString of the current Level name from GameState
         2 ) pause the game
@@ -351,6 +353,8 @@ void Airone3dGameMode::startLevelTransition(ALevelTransitionTrigger* trigger)
 	ensure(ironePc);
 	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
 	ensure(gs);
+	// during any transition, the player is invulnerable!
+	player->setInvulnerable(true);
 	// -place a persistent camera actor at this location //
 	player->copyCameraPropertiesTo(transitionCamera);
 	// -set the player's camera to be this persistent camera //
@@ -560,7 +564,15 @@ void Airone3dGameMode::onEndTransition()
 	if (!ensure(world)) return;
 	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
 	if (!ensure(gs)) return;
-	transitioning = false;
+	/// ASSUMPTION: only one player per game:
+	APlayerController*const pc = world->GetFirstPlayerController();
+	ensure(pc);
+	APawn*const pPawn = pc->GetPawn();
+	ensure(pPawn);
+	AIrone3DPlayer*const player = Cast<AIrone3DPlayer>(pPawn);
+	ensure(player);
+	// restore mortality to the player after they gain control again:
+	player->setInvulnerable(false);
 	//18) unpause all the entities who were spawned from the current room
 	//19) make sure the player can no longer move while the game is paused
 	TArray<TWeakObjectPtr<AActor>> currRoomActorSet = 
@@ -578,6 +590,7 @@ void Airone3dGameMode::onEndTransition()
 			*actor->GetName());
 		actor->CustomTimeDilation = 1.f;
 	}
+	transitioning = false;
 }
 bool Airone3dGameMode::isTransitioning() const
 {

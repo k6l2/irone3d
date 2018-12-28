@@ -57,6 +57,7 @@ public:
 		bool isKilled() const;
 	void copyCameraPropertiesTo(ACameraActor*const otherCam) const;
 	void cutSceneStopVelocity();
+	void setInvulnerable(bool value);
 protected:
 	virtual void BeginPlay() override;
 private:
