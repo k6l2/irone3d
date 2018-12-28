@@ -47,6 +47,10 @@ void ABreakableFloor::Tick(float DeltaTime)
 	const FVector boxLocation     = GetActorLocation();
 	const FVector scaledBoxExtent = boxComponentRoot->GetScaledBoxExtent();
 	bool containsStandingPlayer = false;
+#if !UE_BUILD_SHIPPING
+	//UE_LOG(LogTemp, Warning, TEXT("scaledBoxExtent=%s"),
+	//	*scaledBoxExtent.ToString());
+#endif //!UE_BUILD_SHIPPING
 	for (int32 i = 0; i < overlappingActors.Num(); i++)
 	{
 		const FVector playerLoc = overlappingActors[i]->GetActorLocation();
@@ -184,4 +188,8 @@ void ABreakableFloor::BeginPlay()
 			UE_LOG(LogTemp, Warning, TEXT("FAILED!"));
 		}
 	}
+	// Because of the fact that rooms can be rotated, we need to either clear
+	//	the rotation like this or recalculate the box bounds, so I'm just going
+	//	to put this here because it's easier
+	SetActorRotation(FRotator::ZeroRotator);
 }
