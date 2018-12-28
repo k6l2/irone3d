@@ -18,7 +18,7 @@ ABreakableFloor::ABreakableFloor()
 	: boxComponentRoot(CreateDefaultSubobject<UBoxComponent  >(TEXT("boxComponentRoot")))
 	, decalComponent  (CreateDefaultSubobject<UDecalComponent>(TEXT("decalComponent")))
 	, floorActor(nullptr)
-	, integritySeconds(3.f)
+	, integritySeconds(1.5f)
 	, decalMaterial(nullptr)
 {
 	RootComponent = boxComponentRoot;
@@ -75,11 +75,11 @@ void ABreakableFloor::Tick(float DeltaTime)
 	///	UE_LOG(LogTemp, Warning, TEXT("failed to get prevFrame!"));
 	///}
 	float currFrame;
-	if (integritySeconds > 2.95f)
+	if (integritySeconds > 1.45f)
 	{
 		currFrame = 0;
 	}
-	else if (integritySeconds > 1.f)
+	else if (integritySeconds > 0.75f)
 	{
 		currFrame = 1;
 	}
@@ -170,7 +170,18 @@ void ABreakableFloor::BeginPlay()
 	decalComponent->DecalSize.Y = floorBoxExtent.X;
 	decalComponent->DecalSize.Z = floorBoxExtent.Y;
 	// Create a dynamic material instance for the decal //
-	decalMaterial = decalComponent->CreateDynamicMaterialInstance();
-	decalMaterial->InitializeScalarParameterAndGetIndex(
-		"frame", 0, frameParamIndex);
+	UE_LOG(LogTemp, Warning, TEXT("Creating decal material instance..."));
+	if (!decalMaterial)
+	{
+		decalMaterial = decalComponent->CreateDynamicMaterialInstance();
+		if (decalMaterial)
+		{
+			decalMaterial->InitializeScalarParameterAndGetIndex(
+				"frame", 0, frameParamIndex);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("FAILED!"));
+		}
+	}
 }

@@ -32,7 +32,7 @@ private:
 		//	and we destroy the static mesh actor we're on top of
 		float integritySeconds;
 	UPROPERTY(VisibleAnywhere, Category = BreakableFloor)
-		class UMaterialInstanceDynamic* decalMaterial;
+		class UMaterialInstanceDynamic* decalMaterial = nullptr;
 	UPROPERTY(VisibleAnywhere, Category = BreakableFloor)
 		int32 frameParamIndex;
 	UPROPERTY(EditAnywhere, Category = BreakableFloor)
