@@ -25,6 +25,7 @@
 #include "LevelTransitionTrigger.h"
 #include "Irone3dGameInstance.h"
 #include "Inventory.h"
+#include "TurretLaser.h"
 const FVector Airone3dGameMode::TRANSITION_CAM_OFFSET = { -110,160,200 };
 const float Airone3dGameMode::LEVEL_TRANSITION_FADE_TIME = 0.75f;
 Airone3dGameMode::Airone3dGameMode()
@@ -174,6 +175,22 @@ void Airone3dGameMode::Tick(float deltaSeconds)
 				}
 				else
 				{
+					// set all the previous room's actors to be hidden! //
+					TArray<TWeakObjectPtr<AActor>> currRoomActorSet = 
+						gs->getCurrentRoomActorSet();
+					for (auto& actor : currRoomActorSet)
+					{
+						if (!actor.IsValid())
+						{
+							UE_LOG(LogTemp, Warning,
+								TEXT("actor is invalid, skipping..."))
+								continue;
+						}
+						UE_LOG(LogTemp, Warning,
+							TEXT("setting actIt->GetName()=%s to be hidden!"),
+							*actor->GetName());
+						actor->SetActorHiddenInGame(true);
+					}
 					//9 ) set the new room's "hasBeenVisited" flag
 					justLoadedRoom = gs->advanceCurrCoord(exitVec);
 					updateMinimapWidget(gs->getLevelMap());
@@ -255,6 +272,16 @@ void Airone3dGameMode::startRoomTransition(ARoomTransitionTrigger* trigger)
         18) unpause all the entities who were spawned from the current room
 		19) make sure the player can no longer move while the game is paused
     */
+	// destroy all projectiles
+	for (TObjectIterator<AActor> actIt; actIt; ++actIt)
+	{
+		if (actIt->GetWorld() != world ||
+			!actIt->IsA(ATurretLaser::StaticClass()))
+		{
+			continue;
+		}
+		actIt->Destroy();
+	}
 	//1 ) Get the FString of the current Level name from GameState
 	//strTransitionLevelCameFrom = UGameplayStatics::GetCurrentLevelName(world);
 	strTransitionLevelCameFrom = gs->currentRoomLevelName();
@@ -262,7 +289,8 @@ void Airone3dGameMode::startRoomTransition(ARoomTransitionTrigger* trigger)
 	///	FString::Printf(TEXT("strTransitionLevelCameFrom=%s"), *strTransitionLevelCameFrom));
 	//2 ) pause the game
 	//3 ) make the player able to move while paused
-	TArray<TWeakObjectPtr<AActor>> currRoomActorSet = gs->getCurrentRoomActorSet();
+	TArray<TWeakObjectPtr<AActor>> currRoomActorSet = 
+		gs->getCurrentRoomActorSet();
 	for (auto& actor : currRoomActorSet)
 	{
 		if (!actor.IsValid())
@@ -271,9 +299,9 @@ void Airone3dGameMode::startRoomTransition(ARoomTransitionTrigger* trigger)
 				TEXT("actor is invalid, skipping..."))
 				continue;
 		}
-		UE_LOG(LogTemp, Warning, 
+		UE_LOG(LogTemp, Warning,
 			TEXT("setting CustomTimeDilation=0.f for actIt->GetName()=%s"),
-			*actor->GetName())
+			*actor->GetName());
 		actor->CustomTimeDilation = 0.f;
 	}
 	//4 ) set the player camera to be a certain static location for the transition
@@ -362,42 +390,18 @@ void Airone3dGameMode::fadeIn(const FLinearColor & fadeColor, float fadeTime)
 void Airone3dGameMode::onLoadStreamLevelFinished()
 {
 	UWorld* world = GetWorld();
-	check(world);
-	if (!world)
-	{
-		return;
-	}
+	if (!ensure(world)) return;
 	/// ASSUMPTION: only one player per game:
 	APlayerController* pc = world->GetFirstPlayerController();
-	check(pc);
-	if (!pc)
-	{
-		return;
-	}
+	if (!ensure(pc)) return;
 	AIrone3DPlayerController* ironePc = Cast<AIrone3DPlayerController>(pc);
-	check(ironePc);
-	if (!ironePc)
-	{
-		return;
-	}
+	if (!ensure(ironePc)) return;
 	APawn* pPawn = pc->GetPawn();
-	check(pPawn);
-	if (!pPawn)
-	{
-		return;
-	}
+	if (!ensure(pPawn)) return;
 	AIrone3DPlayer* player = Cast<AIrone3DPlayer>(pPawn);
-	check(player);
-	if (!player)
-	{
-		return;
-	}
+	if (!ensure(player)) return;
 	AIrone3dGameState* gs = world->GetGameState<AIrone3dGameState>();
-	check(gs);
-	if (!gs)
-	{
-		return;
-	}
+	if (!ensure(gs)) return;
 	// Need to move the persistent ANavMeshBoundsVolume into the center of the new Level //
 	//	-First, find the ANavMeshBoundsVolume in the list of world Actors
 	ANavMeshBoundsVolume* navMesh = nullptr;
@@ -456,13 +460,11 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 	/// ////////////////////////////////////////////
 	//11) if this is the first time the room has been loaded,
 	//	cull enemies to fit the difficulty
-	TArray<TWeakObjectPtr<AActor>> currRoomActorSet = gs->getCurrentRoomActorSet();
+	TArray<TWeakObjectPtr<AActor>> currRoomActorSet = 
+		gs->getCurrentRoomActorSet();
 	if (justLoadedRoom)
 	{
 		///TODO: cull enemies to fit difficulty
-		// If we are adjacent to a boss room, 
-		//	spawn a locked door at the entrance! //
-		///TODO
 	}
     //12) set the player camera to be a certain static location that will
 	//	see the player when they finish moving into the new room
@@ -479,6 +481,8 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 				TEXT("actor is invalid, skipping..."))
 				continue;
 		}
+		// set all this room's actors to be visible again!
+		actor->SetActorHiddenInGame(false);
 		auto checkTrigger = Cast<ARoomTransitionTrigger>(actor.Get());
 		if (!checkTrigger)
 		{

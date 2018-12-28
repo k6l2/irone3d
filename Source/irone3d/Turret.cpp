@@ -12,6 +12,7 @@
 #include "irone3d.h"
 #include <Kismet/GameplayStatics.h>
 #include <Sound/SoundCue.h>
+#include "Irone3dGameState.h"
 ATurret::ATurret()
 	: sceneRoot   (CreateDefaultSubobject<USceneComponent         >(TEXT("sceneRoot")))
 	, skeletalMesh(CreateDefaultSubobject<USkeletalMeshComponent  >(TEXT("skeletalMesh")))
@@ -241,6 +242,11 @@ void ATurret::BeginPlay()
 	/// 	FString::Printf(TEXT("aimVector=%s"), *aimVector.ToString()));
 	/// GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
 	/// 	FString::Printf(TEXT("upVector=%s"), *GetActorUpVector().ToString()));
+	UWorld const*const world = GetWorld();
+	ensure(world);
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	ensure(gs);
+	gs->addActorToCurrentRoom(this);
 }
 void ATurret::onSeePawn(APawn* pawn)
 {

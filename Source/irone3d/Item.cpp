@@ -55,6 +55,11 @@ void AItem::BeginPlay()
 		capsuleComponent->OnComponentBeginOverlap.AddDynamic(
 			this, &AItem::onOverlapBegin);
 	}
+	UWorld const*const world = GetWorld();
+	ensure(world);
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	ensure(gs);
+	gs->addActorToCurrentRoom(this);
 }
 void AItem::onOverlapBegin(UPrimitiveComponent * OverlappedComponent,
 	AActor * OtherActor, UPrimitiveComponent * OtherComp,

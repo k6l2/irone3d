@@ -82,7 +82,7 @@ void Acreep::BeginPlay()
 	//TArray < TArray < FString > > sys;
 	//TArray < TArray < FString > > param;
 	//particleSystemBlood->GetParametersUtilized(sys, param);
-	UWorld*const world = GetWorld();
+	UWorld const*const world = GetWorld();
 	ensure(world);
 	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
 	ensure(gs);
