@@ -128,8 +128,8 @@ float ATurret::yaw() const
 	// calculate the "right" vector using forwardVector & upVector //
 	const FVector forwardVector = GetActorForwardVector();
 	const FVector upVector = GetActorUpVector();
-	const FVector rightVector = FVector::CrossProduct(
-		forwardVector, upVector);
+	///const FVector rightVector = FVector::CrossProduct(
+	///	forwardVector, upVector);
 	// calculate the aimUpComponent by projecting aim onto upVector //
 	const FVector aimUpComp = aimVector.ProjectOnTo(upVector);
 	// calculate yawVector by subtracting the upComp from aimVec //
@@ -149,21 +149,30 @@ float ATurret::yaw() const
 float ATurret::pitch() const
 {
 	// calculate the "right" vector using aimForwardVector & upVector //
-	const FVector aimForwardVector = 
-		GetActorRotation().RotateVector(
-			FRotator{ 0.f, yaw(), 0.f }.RotateVector(
-				GetActorForwardVector()));
+	const FVector aimForwardVector =
+		/// //GetActorRotation().RotateVector(
+		/// 	FRotator{ 0.f, yaw(), 0.f }.RotateVector(
+		/// 		GetActorForwardVector());//);
+		GetActorForwardVector().RotateAngleAxis(yaw(), GetActorUpVector());
 	const FVector rightVector = FVector::CrossProduct(
 		aimForwardVector, GetActorUpVector());
 	/// DEBUG ///////////////////
-	/// const auto* const world = GetWorld();
-	/// FVector  eyesLocation;
-	/// FRotator eyesRotation;
-	/// GetActorEyesViewPoint(eyesLocation, eyesRotation);
-	/// const FVector traceStart = eyesLocation + GetActorUpVector()*25.f;
-	/// const FVector traceForward = traceStart + forwardVector *100.f;
-	/// const FVector traceUp = traceStart + GetActorUpVector()*100.f;
-	/// DrawDebugLine(world, traceStart, traceForward, FColor::Red);
+#if !UE_BUILD_SHIPPING
+	UWorld const*const world = GetWorld();
+	FVector  eyesLocation;
+	FRotator eyesRotation;
+	GetActorEyesViewPoint(eyesLocation, eyesRotation);
+	const FVector traceStart = eyesLocation + GetActorUpVector()*25.f;
+	const FVector traceForward = traceStart + aimForwardVector *100.f;
+	//const FVector traceUp = traceStart + GetActorUpVector()*100.f;
+	DrawDebugLine(world, traceStart, traceForward, FColor::Red);
+	DrawDebugString(world, eyesLocation + GetActorUpVector()*100.f,
+		*FString::Printf(
+			TEXT("GetActorForwardVector()=%s\nyaw()=%f\nGetActorRotation()=%s"),
+			*GetActorForwardVector().ToString(), yaw(), 
+			*GetActorRotation().ToString()),
+		nullptr, FColor::Cyan, 0.f, true, 1.f);
+#endif //!UE_BUILD_SHIPPING
 	/// /////////////////////////////
 	// calculate aimPerp by projecting aimVector onto the rightVector //
 	const FVector aimPerp = aimVector.ProjectOnTo(rightVector);
