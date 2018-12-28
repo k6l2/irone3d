@@ -10,6 +10,7 @@
 #include <Runtime/Engine/Classes/GameFramework/Controller.h>
 #include <Kismet/GameplayStatics.h>
 #include <Sound/SoundCue.h>
+#include <Particles/ParticleSystem.h>
 ABossOrb::ABossOrb()
 	: componentSphere(CreateDefaultSubobject<USphereComponent    >(TEXT("sphere")))
 	, componentMesh  (CreateDefaultSubobject<UStaticMeshComponent>(TEXT("mesh"  )))
@@ -29,6 +30,8 @@ ABossOrb::ABossOrb()
 		"SoundCue'/Game/sfx/magic_reflect_Cue.magic_reflect_Cue'"));
 	static ConstructorHelpers::FObjectFinder<USoundCue> soundCueDestroy(TEXT(
 		"SoundCue'/Game/sfx/destroyed_Cue.destroyed_Cue'"));
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> psDestroy(TEXT(
+		"ParticleSystem'/Game/gfx/particles/psBlood.psBlood'"));
 	if (ensure(meshAsset.Succeeded()))
 	{
 		componentMesh->SetStaticMesh(meshAsset.Object);
@@ -49,6 +52,10 @@ ABossOrb::ABossOrb()
 	if (ensure(soundCueDestroy.Succeeded()))
 	{
 		sfxDestroyed = soundCueDestroy.Object;
+	}
+	if (ensure(psDestroy.Succeeded()))
+	{
+		particleSystemExplode = psDestroy.Object;
 	}
 	componentSphere->SetCollisionProfileName("BossOrb");
 	componentMesh->SetCollisionProfileName("OverlapOnlyPlayer");
@@ -156,15 +163,6 @@ float ABossOrb::TakeDamage(float DamageAmount,
 	return Super::TakeDamage(
 		DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 }
-void ABossOrb::BeginDestroy()
-{
-	///UWorld const*const world = GetWorld();
-	///if (world)
-	///{
-	///	UGameplayStatics::PlaySoundAtLocation(world, sfxDestroyed, GetActorLocation());
-	///}
-	Super::BeginDestroy();
-}
 void ABossOrb::shootAt(APawn* targetPawn, bool reflectable)
 {
 	if (!ensure(targetPawn))
@@ -187,6 +185,8 @@ void ABossOrb::onDamageDealt()
 	if (world)
 	{
 		UGameplayStatics::PlaySoundAtLocation(world, sfxDestroyed, GetActorLocation());
+		UGameplayStatics::SpawnEmitterAtLocation(world, particleSystemExplode,
+			GetActorLocation());
 	}
 	Destroy();
 }
