@@ -150,22 +150,9 @@ void Airone3dGameMode::Tick(float deltaSeconds)
 			// the fade effect has just ended //
 			if (fadingIn)
 			{
-				//18) unpause all the entities who were spawned from the current room
-				//19) make sure the player can no longer move while the game is paused
-				TArray<TWeakObjectPtr<AActor>> currRoomActorSet = gs->getCurrentRoomActorSet();
-				for (auto& actor : currRoomActorSet)
-				{
-					if (!actor.IsValid())
-					{
-						UE_LOG(LogTemp, Warning,
-							TEXT("actor is invalid, skipping..."))
-						continue;
-					}
-					UE_LOG(LogTemp, Warning,
-						TEXT("setting CustomTimeDilation=1.f for actIt->GetName()=%s"),
-						*actor->GetName())
-						actor->CustomTimeDilation = 1.f;
-				}
+				// the final steps of the room transition are now moved to the
+				//	onEndTransition function because the player has not 
+				//	actually regained control of their character at this point
 			}
 			else
 			{
@@ -464,6 +451,21 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 		gs->getCurrentRoomActorSet();
 	if (justLoadedRoom)
 	{
+		// initialize the time dilation to 0 when first loading a room to 
+		//	prevent enemies from preemptively attacking the player
+		for (auto& actor : currRoomActorSet)
+		{
+			if (!actor.IsValid())
+			{
+				UE_LOG(LogTemp, Warning,
+					TEXT("actor is invalid, skipping..."))
+					continue;
+			}
+			UE_LOG(LogTemp, Warning,
+				TEXT("initializing CustomTimeDilation=0.f for actIt->GetName()=%s"),
+				*actor->GetName());
+			actor->CustomTimeDilation = 0.f;
+		}
 		///TODO: cull enemies to fit difficulty
 	}
     //12) set the player camera to be a certain static location that will
@@ -554,7 +556,28 @@ void Airone3dGameMode::onLoadStreamLevelFinished()
 }
 void Airone3dGameMode::onEndTransition()
 {
+	UWorld*const world = GetWorld();
+	if (!ensure(world)) return;
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	if (!ensure(gs)) return;
 	transitioning = false;
+	//18) unpause all the entities who were spawned from the current room
+	//19) make sure the player can no longer move while the game is paused
+	TArray<TWeakObjectPtr<AActor>> currRoomActorSet = 
+		gs->getCurrentRoomActorSet();
+	for (auto& actor : currRoomActorSet)
+	{
+		if (!actor.IsValid())
+		{
+			UE_LOG(LogTemp, Warning,
+				TEXT("actor is invalid, skipping..."))
+				continue;
+		}
+		UE_LOG(LogTemp, Warning,
+			TEXT("setting CustomTimeDilation=1.f for actIt->GetName()=%s"),
+			*actor->GetName());
+		actor->CustomTimeDilation = 1.f;
+	}
 }
 bool Airone3dGameMode::isTransitioning() const
 {
