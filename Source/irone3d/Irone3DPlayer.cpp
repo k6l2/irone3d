@@ -23,6 +23,7 @@
 #include <Runtime/Engine/Classes/Particles/ParticleSystem.h>
 #include <Runtime/Engine/Classes/Particles/ParticleSystemComponent.h>
 #include <Sound/SoundCue.h>
+#include "LockedDoor.h"
 const FLinearColor AIrone3DPlayer::HURT_OUTLINE_COLOR = { 0.f,0.f,0.f,1.f };
 AIrone3DPlayer::AIrone3DPlayer()
     :cameraBoom           (CreateDefaultSubobject<USpringArmComponent     >(TEXT("CameraBoom")))
@@ -275,10 +276,11 @@ void AIrone3DPlayer::onCapsuleHit(UPrimitiveComponent* HitComponent,
 	{
 		return;
 	}
-	if (OtherActor->IsA(classLockedDoor) &&
+	ALockedDoor*const lockedDoor = Cast<ALockedDoor>(OtherActor);
+	if (lockedDoor &&
 		gs->getInventory()->removeItem(ItemType::KEY))
 	{
-		OtherActor->Destroy();
+		lockedDoor->unlock();
 	}
 }
 ///void AIrone3DPlayer::onAttackOverlap(UPrimitiveComponent* OverlappedComponent,

@@ -94,8 +94,6 @@ private:
 		class UParticleSystemComponent* dashParticleComponent;
     UPROPERTY()
 		UMaterialInstanceDynamic* dynMaterialSlash;
-	UPROPERTY(EditDefaultsOnly, Category = Player)
-		TSubclassOf<AActor> classLockedDoor;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, 
 			meta = (AllowPrivateAccess = "true"))
 		UParticleSystem* particleSystemBlood;
