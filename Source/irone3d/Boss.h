@@ -7,6 +7,9 @@ UCLASS()
 class IRONE3D_API ABoss : public APawn
 {
 	GENERATED_BODY()
+private:
+	static const FLinearColor HURT_OUTLINE_COLOR;
+	static const float HURT_FLASH_SECONDS;
 public:
 	ABoss();
 	virtual void Tick(float DeltaTime) override;
@@ -70,4 +73,14 @@ private:
 		class USoundCue* sfxMagicCharge;
 	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
 		class USoundCue* sfxMagicRelease;
+	UPROPERTY(VisibleAnywhere, Category = Boss)
+		UMaterialInstanceDynamic* outlineMaterial;
+	UPROPERTY(VisibleAnywhere, Category = Boss)
+		UMaterialInstanceDynamic* eyesMaterial;
+	UPROPERTY(VisibleAnywhere, Category = Boss)
+		FLinearColor defaultOutlineColor;
+	UPROPERTY(VisibleAnywhere, Category = Boss)
+		float hurtFlashSeconds = 0.f;
+	UPROPERTY(EditDefaultsOnly, Category = Boss)
+		UParticleSystem* particleSystemBlood;
 };

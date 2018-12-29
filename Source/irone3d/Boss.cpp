@@ -13,6 +13,10 @@
 #include "irone3dGameMode.h"
 #include <Kismet/GameplayStatics.h>
 #include <Sound/SoundCue.h>
+#include <Materials/MaterialInstanceDynamic.h>
+#include <Particles/ParticleSystemComponent.h>
+const FLinearColor ABoss::HURT_OUTLINE_COLOR = { 1.f,0.f,0.f,1.f };
+const float ABoss::HURT_FLASH_SECONDS = 5.f;
 ABoss::ABoss()
 	: componentSphere(CreateDefaultSubobject<USphereComponent>(TEXT("sphere")))
 	, componentMesh(CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("mesh")))
@@ -133,6 +137,18 @@ void ABoss::BeginPlay()
 		gs->addActorToCurrentRoom(this);
 		gs->addActorToCurrentRoom(fallingDoor);
 	}
+	// hit effect material instance stuff //
+	const int32 outlineMaterialIndex = 
+		componentMesh->GetMaterialIndex("materialOutline");
+	const int32 eyesMaterialIndex    = 
+		componentMesh->GetMaterialIndex("materialEyes");
+	outlineMaterial = componentMesh->CreateAndSetMaterialInstanceDynamic(
+		outlineMaterialIndex);
+	eyesMaterial = componentMesh->CreateAndSetMaterialInstanceDynamic(
+		eyesMaterialIndex);
+	FMaterialParameterInfo outlineColorInfo;
+	outlineColorInfo.Name = "color";
+	outlineMaterial->GetVectorParameterValue(outlineColorInfo, defaultOutlineColor);
 }
 void ABoss::onUnitDie()
 {
@@ -162,6 +178,18 @@ void ABoss::onUnitDie()
 void ABoss::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	// hurt effect stuff //
+	const float hurtPercent = 
+		FMath::Clamp(hurtFlashSeconds / HURT_FLASH_SECONDS, 0.f,1.f);
+	if (hurtFlashSeconds)
+	{
+		hurtFlashSeconds -= DeltaTime;
+	}
+	const float colorLerpProgress = FMath::Pow(hurtPercent, 2);
+	const FLinearColor outlineColor = FLinearColor::LerpUsingHSV(
+		defaultOutlineColor, HURT_OUTLINE_COLOR, colorLerpProgress);
+	outlineMaterial->SetVectorParameterValue("color", outlineColor);
+	eyesMaterial->SetVectorParameterValue("color", outlineColor);
 	// obtain the target player //
 	UWorld* const world = GetWorld();
 	if (!ensure(world))
@@ -363,10 +391,15 @@ float ABoss::TakeDamage(float DamageAmount,
 	FDamageEvent const& DamageEvent, AController * EventInstigator,
 	AActor * DamageCauser)
 {
+	hurtFlashSeconds = HURT_FLASH_SECONDS;
 	UWorld const*const world = GetWorld();
 	if (world)
 	{
 		UGameplayStatics::PlaySoundAtLocation(world, sfxHit, GetActorLocation());
+		auto particleComp =
+			UGameplayStatics::SpawnEmitterAtLocation(world, particleSystemBlood,
+				GetActorLocation());
+		particleComp->SetVectorParameter("color", FVector{ 1.f,0.f,0.f });
 	}
 	return Super::TakeDamage(
 		DamageAmount, DamageEvent, EventInstigator, DamageCauser);
