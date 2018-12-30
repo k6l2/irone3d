@@ -571,6 +571,9 @@ void Airone3dGameMode::onEndTransition()
 	ensure(pPawn);
 	AIrone3DPlayer*const player = Cast<AIrone3DPlayer>(pPawn);
 	ensure(player);
+	// move player down onto the ground??
+	player->SetActorLocation(player->GetActorLocation() +
+		player->GetActorUpVector()*-100, true);
 	// restore mortality to the player after they gain control again:
 	player->setInvulnerable(false);
 	//18) unpause all the entities who were spawned from the current room

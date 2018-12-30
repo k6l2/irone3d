@@ -12,6 +12,7 @@
 #include <Kismet/GameplayStatics.h>
 #include <Particles/ParticleSystemComponent.h>
 #include <Particles/ParticleSystem.h>
+#include <ParticleEmitterInstances.h>
 AItem::AItem()
 	:capsuleComponent(CreateDefaultSubobject<UCapsuleComponent>(TEXT("capsule")))
 	,meshComponent(CreateDefaultSubobject<UStaticMeshComponent>(TEXT("mesh")))
@@ -23,6 +24,17 @@ AItem::AItem()
 }
 void AItem::Tick(float DeltaTime)
 {
+	// This is the dumbest thing in the world, but apparently you just have to
+	//	do this in order to get the particle system component rendering in the
+	//	correct location...
+	for (auto emitter : sparkleParticleComponent->EmitterInstances)
+	{
+		emitter->Location = GetActorLocation();
+	}
+	//sparkleParticleComponent->EmitterInstances[0]->Location
+	///sparkleParticleComponent->SetRelativeLocation(FVector::ZeroVector);
+	///sparkleParticleComponent->Activate();
+	//sparkleParticleComponent->SetRelativeLocation(FVector::ZeroVector);
 	static const float MESH_ROTATION_SPEED = 90;
 	const float rotSpeed = MESH_ROTATION_SPEED*DeltaTime;
 	meshComponent->AddRelativeRotation(FRotator(0.f, rotSpeed, 0.f));
@@ -54,6 +66,7 @@ void AItem::BeginPlay()
 	sparkleParticleComponent->SetRelativeLocation(FVector::ZeroVector);
 	FAttachmentTransformRules attachRules(EAttachmentRule::SnapToTarget, true);
 	sparkleParticleComponent->AttachToComponent(RootComponent, attachRules);
+	sparkleParticleComponent->Activate(true);
 	setMeta(itemMeta);
 	if (!capsuleComponent->OnComponentBeginOverlap.IsAlreadyBound(
 		this, &AItem::onOverlapBegin))
