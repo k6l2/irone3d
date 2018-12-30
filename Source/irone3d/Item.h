@@ -41,6 +41,10 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, 
 		Category = Components, meta = (AllowPrivateAccess = "true"))
 		class UStaticMeshComponent* meshComponent;
+	UPROPERTY(EditAnywhere, Category = Components)
+		class UParticleSystemComponent* sparkleParticleComponent;
+	UPROPERTY(EditAnywhere, Category = Item)
+		class UParticleSystem* sparkleBurst;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, 
 		Category = ItemMeshes, meta = (AllowPrivateAccess = "true"))
 		class UStaticMesh* meshHeart;

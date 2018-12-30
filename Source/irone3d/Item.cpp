@@ -10,9 +10,12 @@
 #include <Runtime/Engine/Classes/Engine/Engine.h>
 #include <Sound/SoundCue.h>
 #include <Kismet/GameplayStatics.h>
+#include <Particles/ParticleSystemComponent.h>
+#include <Particles/ParticleSystem.h>
 AItem::AItem()
 	:capsuleComponent(CreateDefaultSubobject<UCapsuleComponent>(TEXT("capsule")))
 	,meshComponent(CreateDefaultSubobject<UStaticMeshComponent>(TEXT("mesh")))
+	,sparkleParticleComponent(CreateDefaultSubobject<UParticleSystemComponent>(TEXT("sparkle")))
 {
 	PrimaryActorTick.bCanEverTick = true;
 	capsuleComponent->SetupAttachment(RootComponent);
@@ -48,6 +51,9 @@ void AItem::setMeta(const FItemMeta & newMeta)
 void AItem::BeginPlay()
 {
 	Super::BeginPlay();
+	sparkleParticleComponent->SetRelativeLocation(FVector::ZeroVector);
+	FAttachmentTransformRules attachRules(EAttachmentRule::SnapToTarget, true);
+	sparkleParticleComponent->AttachToComponent(RootComponent, attachRules);
 	setMeta(itemMeta);
 	if (!capsuleComponent->OnComponentBeginOverlap.IsAlreadyBound(
 		this, &AItem::onOverlapBegin))
@@ -73,6 +79,8 @@ void AItem::onOverlapBegin(UPrimitiveComponent * OverlappedComponent,
 	{
 		UGameplayStatics::PlaySoundAtLocation(world, sfxItemPickup, GetActorLocation());
 		gs->getInventory()->addItem(itemMeta.type);
+		UGameplayStatics::SpawnEmitterAtLocation(world, sparkleBurst,
+			GetActorLocation());
 		Destroy();
 	}
 }
