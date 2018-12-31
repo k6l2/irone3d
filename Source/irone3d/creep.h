@@ -17,11 +17,10 @@ public:
     float lateralSpeed() const;
     bool canSee(AActor* actor) const;
     virtual void Tick(float DeltaTime) override;
-    virtual void SetupPlayerInputComponent(
-		class UInputComponent* PlayerInputComponent) override;
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
 		AController * EventInstigator, AActor * DamageCauser) override;
 	void getOverlappingAggroActors(TArray<AActor*>& outArray) const;
+	float getPushAwaySeconds() const;
 protected:
 	virtual void BeginPlay() override;
 private:
@@ -30,7 +29,10 @@ private:
     UFUNCTION()
 		void onUnitDie();
 private:
-	float hurtFlashSeconds;
+	UPROPERTY(VisibleAnywhere, Transient, Category = Creep)
+		float pushAwaySeconds = 0.f;
+	UPROPERTY(VisibleAnywhere, Transient, Category = Creep)
+		float hurtFlashSeconds = 0.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components,
 			meta = (AllowPrivateAccess = "true"))
 		class UPawnSensingComponent* pawnSense;

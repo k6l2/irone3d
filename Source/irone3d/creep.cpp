@@ -16,6 +16,7 @@
 #include "CombatComponent.h"
 #include <Kismet/GameplayStatics.h>
 #include <Sound/SoundCue.h>
+#include <GameFramework/CharacterMovementComponent.h>
 const FLinearColor Acreep::HURT_OUTLINE_COLOR = {1.f,0.f,0.f,1.f};
 const float Acreep::HURT_FLASH_SECONDS = 5.f;
 Acreep::Acreep()
@@ -35,8 +36,9 @@ Acreep::Acreep()
 float Acreep::lateralSpeed() const
 {
     auto movementComp = GetMovementComponent();
-    check(movementComp);
-    const float scalarProjection = FVector::DotProduct(movementComp->Velocity, GetActorUpVector());
+	if (!ensure(movementComp)) return 0.f;
+    const float scalarProjection = 
+		FVector::DotProduct(movementComp->Velocity, GetActorUpVector());
     const FVector upVelocity = scalarProjection*GetActorUpVector();
     const FVector lateralVelocity = movementComp->Velocity - upVelocity;
     return lateralVelocity.Size();
@@ -57,12 +59,18 @@ void Acreep::getOverlappingAggroActors(TArray<AActor*>& outArray) const
 	}
 	componentAggroSphere->GetOverlappingActors(outArray);
 }
+float Acreep::getPushAwaySeconds() const
+{
+	return pushAwaySeconds;
+}
 void Acreep::BeginPlay()
 {
 	Super::BeginPlay();
-	ensure(unitComponent);
-	unitComponent->delegateDie.BindUFunction(this, "onUnitDie");
-	unitComponent->addVulnerablePrimitiveComponent(GetCapsuleComponent());
+	if (ensure(unitComponent))
+	{
+		unitComponent->delegateDie.BindUFunction(this, "onUnitDie");
+		unitComponent->addVulnerablePrimitiveComponent(GetCapsuleComponent());
+	}
 	if (pawnSense)
     {
 		if (!pawnSense->OnSeePawn.IsAlreadyBound(this, &Acreep::onSeePawn))
@@ -79,23 +87,20 @@ void Acreep::BeginPlay()
 	FMaterialParameterInfo outlineColorInfo;
 	outlineColorInfo.Name = "color";
 	outlineMaterial->GetVectorParameterValue(outlineColorInfo, defaultOutlineColor);
-	//TArray < TArray < FString > > sys;
-	//TArray < TArray < FString > > param;
-	//particleSystemBlood->GetParametersUtilized(sys, param);
 	UWorld const*const world = GetWorld();
-	ensure(world);
+	if (!ensure(world)) return;
 	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
-	ensure(gs);
+	if (!ensure(gs)) return;
 	gs->addActorToCurrentRoom(this);
 }
 void Acreep::onSeePawn(APawn * pawn)
 {
     AController*const controller = GetController();
-	ensure(controller);
+	if (!ensure(controller)) return;
 	AAiControllerCreep*const creepController = 
 		Cast<AAiControllerCreep>(controller);
-	ensure(creepController);
-	AIrone3DPlayer*const player = Cast<AIrone3DPlayer>(pawn);
+	if (!ensure(creepController)) return;
+	AIrone3DPlayer const*const player = Cast<AIrone3DPlayer>(pawn);
 	if (player)
 	{
 		creepController->onSeeEnemyPawn(pawn);
@@ -104,6 +109,10 @@ void Acreep::onSeePawn(APawn * pawn)
 void Acreep::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	if (pushAwaySeconds > 0)
+	{
+		pushAwaySeconds -= DeltaTime;
+	}
 	const float hurtPercent = 
 		FMath::Clamp(hurtFlashSeconds / HURT_FLASH_SECONDS, 0.f,1.f);
 	if (hurtFlashSeconds)
@@ -116,15 +125,11 @@ void Acreep::Tick(float DeltaTime)
 	outlineMaterial->SetVectorParameterValue("color", outlineColor);
 	eyesMaterial->SetVectorParameterValue("color", outlineColor);
 }
-void Acreep::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-}
 float Acreep::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent, 
 	AController * EventInstigator, AActor * DamageCauser)
 {
 	hurtFlashSeconds = HURT_FLASH_SECONDS;
-	UWorld*const world = GetWorld();
+	UWorld const*const world = GetWorld();
 	if (world)
 	{
 		if (!unitComponent->isDead())
@@ -136,45 +141,62 @@ float Acreep::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent,
 				GetActorLocation());
 		particleComp->SetVectorParameter("color", FVector{ 1.f,0.f,0.f });
 	}
-	auto controller = GetController();
+	AController*const controller = GetController();
+	AAiControllerCreep*const creepController = 
+		Cast<AAiControllerCreep>(controller);
 	APawn* instigatingPawn = nullptr;
 	if (EventInstigator)
 	{
 		instigatingPawn = EventInstigator->GetPawn();
-	}
-	//UE_LOG(LogTemp, Warning, 
-	//	TEXT("Is it even POSSIBLE? EventInstigator=%p EventInstigator->GetOwner()=%p DamageCauser=%p"),
-	//	(void*)(EventInstigator), (void*)(instigatingActor), (void*)(DamageCauser));
-	//if (EventInstigator)
-	//{
-	//	UE_LOG(LogTemp, Warning, 
-	//		TEXT("\tEventInstigator=%s"),
-	//		*EventInstigator->GetFName().ToString());
-	//}
-	//if (DamageCauser)
-	//{
-	//	UE_LOG(LogTemp, Warning, 
-	//		TEXT("\tDamageCauser=%s"),
-	//		*DamageCauser->GetFName().ToString());
-	//}
-	if (controller && instigatingPawn)
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("YES"));
-		auto creepController = Cast<AAiControllerCreep>(controller);
-		if (creepController)
+		AIrone3DPlayer*const instigatingPlayer = 
+			Cast<AIrone3DPlayer>(instigatingPawn);
+		UCharacterMovementComponent*const charMoveComp =
+			Cast< UCharacterMovementComponent>(GetMovementComponent());
+		if (instigatingPlayer && charMoveComp && ensure(creepController))
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("IT IS"));
-			creepController->aggro(instigatingPawn);
+			const FVector prevVelocity = charMoveComp->Velocity;
+			// if we're hit by the player, we want the creep to move away from
+			//	the player a bit just like original Irone
+			pushAwaySeconds = 1.5f;
+			// need to call stopmovement to end the pathfinding procs that are
+			//	happening in the background somewhere in the engine's pathfind
+			//	logic
+			creepController->StopMovement();
+			const FVector awayFromPlayerVec =
+				(GetActorLocation() - instigatingPlayer->GetActorLocation()).
+					GetSafeNormal2D();
+			///UE_LOG(LogTemp, Warning, TEXT("charMoveComp->Velocity=%s awayFromPlayerVec=%s"), 
+			///	*charMoveComp->Velocity.ToString(), *awayFromPlayerVec.ToString());
+			///charMoveComp->AddForce(awayFromPlayerVec * -100000000);
+			if (FVector::DotProduct(
+				prevVelocity, awayFromPlayerVec) < 0)
+			{
+				///UE_LOG(LogTemp, Warning, TEXT("BOOST!!!"));
+				charMoveComp->Velocity = prevVelocity * -0.5f;
+				///FRotator rotation = GetActorRotation();
+				///rotation.Yaw = awayFromPlayerVec.Rotation().Yaw;
+				///SetActorRotation(rotation);
+				SetActorRotation(awayFromPlayerVec.Rotation());
+			}
+			//charMoveComp->Velocity = awayFromPlayerVec * 500;
+			//FRotator rotation = GetActorRotation();
+			//rotation.Yaw = awayFromPlayerVec.Rotation().Yaw;
+			//SetActorRotation(rotation);
 		}
+	}
+	if (ensure(creepController) && instigatingPawn)
+	{
+		creepController->aggro(instigatingPawn);
 	}
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 }
 void Acreep::onUnitDie()
 {
-	UWorld*const world = GetWorld();
+	UWorld const*const world = GetWorld();
 	if (world)
 	{
-		UGameplayStatics::PlaySoundAtLocation(world, sfxDestroyed, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(
+			world, sfxDestroyed, GetActorLocation());
 	}
 	Destroy();
 }

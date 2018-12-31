@@ -211,7 +211,7 @@ bool AIrone3DPlayer::isKilled() const
 	}
 	AIrone3dGameState const*const gs =
 		world->GetGameState<AIrone3dGameState>();
-	if (!ensure(gs))
+	if (!(gs))
 	{
 		return false;
 	}

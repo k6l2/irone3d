@@ -14,8 +14,6 @@ public:
     void onSeeEnemyPawn(APawn* enemyPawn);
     UFUNCTION(BlueprintCallable, Category = BehaviorTree)
 		bool moveToTargetActor();
-    UFUNCTION(BlueprintCallable, Category = BehaviorTree)
-		bool flock();
 	void aggro(AActor* targetObject);
 	bool isAggrod() const;
 protected:
