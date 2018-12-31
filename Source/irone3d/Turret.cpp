@@ -159,20 +159,20 @@ float ATurret::pitch() const
 		aimForwardVector, GetActorUpVector());
 	/// DEBUG ///////////////////
 #if !UE_BUILD_SHIPPING
-	UWorld const*const world = GetWorld();
-	FVector  eyesLocation;
-	FRotator eyesRotation;
-	GetActorEyesViewPoint(eyesLocation, eyesRotation);
-	const FVector traceStart = eyesLocation + GetActorUpVector()*25.f;
-	const FVector traceForward = traceStart + aimForwardVector *100.f;
-	//const FVector traceUp = traceStart + GetActorUpVector()*100.f;
-	DrawDebugLine(world, traceStart, traceForward, FColor::Red);
-	DrawDebugString(world, eyesLocation + GetActorUpVector()*100.f,
-		*FString::Printf(
-			TEXT("GetActorForwardVector()=%s\nyaw()=%f\nGetActorRotation()=%s"),
-			*GetActorForwardVector().ToString(), yaw(), 
-			*GetActorRotation().ToString()),
-		nullptr, FColor::Cyan, 0.f, true, 1.f);
+	/// UWorld const*const world = GetWorld();
+	/// FVector  eyesLocation;
+	/// FRotator eyesRotation;
+	/// GetActorEyesViewPoint(eyesLocation, eyesRotation);
+	/// const FVector traceStart = eyesLocation + GetActorUpVector()*25.f;
+	/// const FVector traceForward = traceStart + aimForwardVector *100.f;
+	/// //const FVector traceUp = traceStart + GetActorUpVector()*100.f;
+	/// DrawDebugLine(world, traceStart, traceForward, FColor::Red);
+	/// DrawDebugString(world, eyesLocation + GetActorUpVector()*100.f,
+	/// 	*FString::Printf(
+	/// 		TEXT("GetActorForwardVector()=%s\nyaw()=%f\nGetActorRotation()=%s"),
+	/// 		*GetActorForwardVector().ToString(), yaw(), 
+	/// 		*GetActorRotation().ToString()),
+	/// 	nullptr, FColor::Cyan, 0.f, true, 1.f);
 #endif //!UE_BUILD_SHIPPING
 	/// /////////////////////////////
 	// calculate aimPerp by projecting aimVector onto the rightVector //
