@@ -55,6 +55,8 @@ private:
 		class USoundCue* sfxHit;
 	UPROPERTY(EditDefaultsOnly, Category = SoundEffects)
 		class USoundCue* sfxDestroyed;
+	UPROPERTY(EditDefaultsOnly, Category = Creep)
+		TSubclassOf<class AActor> bpItemClass;
 	UMaterialInstanceDynamic* outlineMaterial;
 	UMaterialInstanceDynamic* eyesMaterial;
 	FLinearColor defaultOutlineColor;

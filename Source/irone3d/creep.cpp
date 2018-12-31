@@ -17,6 +17,8 @@
 #include <Kismet/GameplayStatics.h>
 #include <Sound/SoundCue.h>
 #include <GameFramework/CharacterMovementComponent.h>
+#include "Item.h"
+#include <ConstructorHelpers.h>
 const FLinearColor Acreep::HURT_OUTLINE_COLOR = {1.f,0.f,0.f,1.f};
 const float Acreep::HURT_FLASH_SECONDS = 5.f;
 Acreep::Acreep()
@@ -27,6 +29,12 @@ Acreep::Acreep()
 	,componentAggroSphere(CreateDefaultSubobject<USphereComponent>(TEXT("aggroSphere")))
 	,componentCombat(CreateDefaultSubobject<UCombatComponent>(TEXT("combat")))
 {
+	static ConstructorHelpers::FObjectFinder<UBlueprint> bpItem(TEXT(
+		"Blueprint'/Game/c++-BP/BpItem.BpItem'"));
+	if (bpItem.Succeeded())
+	{
+		bpItemClass = bpItem.Object->GeneratedClass;
+	}
 	componentAttackSphere->SetupAttachment(RootComponent);
 	componentCombat->SetupAttachment(componentAttackSphere);
 	componentCombat->setAlwaysAttacking(true);
@@ -192,11 +200,49 @@ float Acreep::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent,
 }
 void Acreep::onUnitDie()
 {
-	UWorld const*const world = GetWorld();
+	UWorld*const world = GetWorld();
 	if (world)
 	{
 		UGameplayStatics::PlaySoundAtLocation(
 			world, sfxDestroyed, GetActorLocation());
+	}
+	AIrone3dGameState*const gs = world->GetGameState<AIrone3dGameState>();
+	if (gs)
+	{
+		TArray<TWeakObjectPtr<AActor>> currRoomActorSet = 
+			gs->getCurrentRoomActorSet();
+		bool foundLiveCreep = false;
+		for (auto weakActor : currRoomActorSet)
+		{
+			if (!weakActor.IsValid())
+			{
+				continue;
+			}
+			Acreep* creep = Cast<Acreep>(weakActor.Get());
+			if (!creep || creep->unitComponent->isDead())
+			{
+				continue;
+			}
+			foundLiveCreep = true;
+		}
+		if (!foundLiveCreep)
+		{
+			if (FMath::FRand() < 1/3.f)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Spawning loot!!!"));
+				// we were the last living creep in the room, so spawn an item 
+				//	reward
+				AItem* newItem = world->SpawnActor<AItem>(bpItemClass.Get(),
+					GetActorLocation(), GetActorRotation());
+				FItemMeta loot;
+				loot.type = ItemType::HEART;
+				newItem->setMeta(loot);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Bad roll - no loot ;("));
+			}
+		}
 	}
 	Destroy();
 }
