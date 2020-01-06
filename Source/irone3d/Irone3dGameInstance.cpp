@@ -4,7 +4,7 @@ UIrone3dGameInstance::UIrone3dGameInstance(
 	const FObjectInitializer& ObjectInitializer)
 {
 	// default starting player inventory (including HP)
-	itemCounts.Add(ItemType::HEART, 3);
+	itemCounts.Add(ItemType::HEART, 5);
 }
 uint8 UIrone3dGameInstance::getNextFloorNumber() const
 {

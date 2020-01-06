@@ -10,13 +10,13 @@ class IRONE3D_API AAiControllerCreep : public AAIController
 public:
     AAiControllerCreep(const FObjectInitializer & ObjectInitializer);
     virtual void Tick(float DeltaSeconds) override;
-    virtual void Possess(APawn * InPawn) override;
     void onSeeEnemyPawn(APawn* enemyPawn);
     UFUNCTION(BlueprintCallable, Category = BehaviorTree)
 		bool moveToTargetActor();
 	void aggro(AActor* targetObject);
 	bool isAggrod() const;
 protected:
+	virtual void OnPossess(APawn* InPawn) override;
     virtual void BeginPlay() override;
 private:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Misc, 

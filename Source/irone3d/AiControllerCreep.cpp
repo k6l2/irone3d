@@ -5,6 +5,7 @@
 #include "Runtime/AIModule/Classes/BehaviorTree/BlackboardComponent.h"
 #include <GameFramework/PawnMovementComponent.h>
 #include <GameFramework/CharacterMovementComponent.h>
+#include "irone3d.h"
 AAiControllerCreep::AAiControllerCreep(
 		const FObjectInitializer & ObjectInitializer)
     :Super(ObjectInitializer)
@@ -16,40 +17,30 @@ void AAiControllerCreep::Tick(float DeltaSeconds)
 {
     //UE_LOG(LogTemp, Warning, TEXT("AAiControllerCreep::Tick"));
     Super::Tick(DeltaSeconds);
-    auto const pawn = GetPawn();
+    APawn*const pawn = GetPawn();
     if (!Blackboard || !pawn)
     {
         return;
     }
-    auto const creep = Cast<Acreep>(pawn);
+	Acreep*const creep = Cast<Acreep>(pawn);
     if (!creep)
     {
         return;
     }
-    auto target = Blackboard->GetValueAsObject("target");
+    UObject*const target = Blackboard->GetValueAsObject("target");
     if (target)
     {
-        auto targetActor = Cast<AActor>(target);
+		AActor*const targetActor = Cast<AActor>(target);
 		if (creep->getPushAwaySeconds() > 0)
 		{
 			const FVector toTargetActor =
 				(targetActor->GetActorLocation() - creep->GetActorLocation()).
 					GetSafeNormal2D();
-			UPawnMovementComponent *const moveComp =
+			UPawnMovementComponent*const moveComp =
 				creep->GetMovementComponent();
 			if (moveComp)
 			{
-				//if (FVector::DotProduct(moveComp->Velocity, toTargetActor) >= 0)
-				//{
-				//	StopMovement();
-				//	moveComp->Velocity = -toTargetActor * 1000;
-				//	FRotator rotation = creep->GetActorRotation();
-				//	rotation.Yaw = (-toTargetActor).Rotation().Yaw;
-				//	creep->SetActorRotation(rotation);
-				//}
 				creep->AddMovementInput(toTargetActor);
-				///moveComp->AddInputVector(-toTargetActor);
-				///UE_LOG(LogTemp, Warning, TEXT("MOVE AWAY!!!!!!!!!!"));
 			}
 		}
         if (targetActor)
@@ -57,23 +48,41 @@ void AAiControllerCreep::Tick(float DeltaSeconds)
             const auto targetLocation = targetActor->GetActorLocation();
             if (creep->canSee(targetActor))
             {
-                Blackboard->SetValueAsVector("locationLastKnownTarget", 
-					targetLocation);
+				Blackboard->SetValueAsFloat("persistSeconds", 2.f);
+				Blackboard->SetValueAsVector(
+					"locationLastKnownTarget", targetLocation);
             }
             else
             {
+				TEMPLOG("Lost vision of targetActor!!!");
                 Blackboard->SetValueAsObject("target", nullptr);
+				StopMovement();
             }
         }
         else
         {
+			//TEMPLOG("target is not an actor?? Nullifying...");
             Blackboard->SetValueAsObject("target", nullptr);
         }
     }
+	else
+	{
+		const float persistSeconds =
+			Blackboard->GetValueAsFloat("persistSeconds");
+		if (persistSeconds > 0)
+		{
+			Blackboard->SetValueAsFloat("persistSeconds", 
+				persistSeconds - DeltaSeconds);
+		}
+		else
+		{
+			Blackboard->SetValueAsBool("aggrod", false);
+		}
+	}
 }
-void AAiControllerCreep::Possess(APawn * InPawn)
+void AAiControllerCreep::OnPossess(APawn * InPawn)
 {
-    Super::Possess(InPawn);
+    Super::OnPossess(InPawn);
     Acreep const*const creep = Cast<Acreep>(InPawn);
     if (!creep)
     {
@@ -137,32 +146,35 @@ bool AAiControllerCreep::moveToTargetActor()
 	///}
 	if (creep && creep->getPushAwaySeconds() > 0)
 	{
-		const FVector toTargetActor = 
-			(targetActor->GetActorLocation() - creep->GetActorLocation()).
-				GetSafeNormal2D();
-		UPawnMovementComponent *const moveComp = 
-			creep->GetMovementComponent();
-		if (moveComp)
-		{
-			//if (FVector::DotProduct(moveComp->Velocity, toTargetActor) >= 0)
-			// {
-			// 	moveComp->Velocity = -toTargetActor * 1000;
-			// }
-			///creep->AddMovementInput(toTargetActor);
-			//moveComp->AddInputVector(toTargetActor);
-			//UE_LOG(LogTemp, Warning, TEXT("MOVE AWAY!!!!!!!!!!"));
-		}
+		/// const FVector toTargetActor = 
+		/// 	(targetActor->GetActorLocation() - creep->GetActorLocation()).
+		/// 		GetSafeNormal2D();
+		/// UPawnMovementComponent *const moveComp = 
+		/// 	creep->GetMovementComponent();
+		/// if (moveComp)
+		/// {
+		/// 	//if (FVector::DotProduct(moveComp->Velocity, toTargetActor) >= 0)
+		/// 	// {
+		/// 	// 	moveComp->Velocity = -toTargetActor * 1000;
+		/// 	// }
+		/// 	///creep->AddMovementInput(toTargetActor);
+		/// 	//moveComp->AddInputVector(toTargetActor);
+		/// 	//UE_LOG(LogTemp, Warning, TEXT("MOVE AWAY!!!!!!!!!!"));
+		/// }
 		return false;
 	}
-	///TODO: if we've been hit by a player, move away from the target
-    auto result = MoveToActor(targetActor);
+    auto result = MoveToActor(targetActor,10);
     switch (result)
     {
     case EPathFollowingRequestResult::AlreadyAtGoal:
+		TEMPLOG("At goal!");
+		return true;
     case EPathFollowingRequestResult::RequestSuccessful:
-        return true;
+		TEMPLOG("SUCCESS? targetActorLocation=%s", 
+			*targetActor->GetActorLocation().ToString());
+		break;
     case EPathFollowingRequestResult::Failed:
-		//UE_LOG(LogTemp, Warning, TEXT("Failed"));
+		TEMPLOG("Failed");
         break;
     }
     return false;
@@ -180,13 +192,15 @@ void AAiControllerCreep::aggro(AActor * targetObject)
 	{
 		return;
 	}
-	//UE_LOG(LogTemp, Warning, TEXT("WUT WUT IN THE BUTT"));
 	Blackboard->SetValueAsBool("aggrod", true);
 	Blackboard->SetValueAsObject("target", targetObject);
 	const auto targetLocation = targetObject->GetActorLocation();
 	Blackboard->SetValueAsVector("locationLastKnownTarget", targetLocation);
 	if (!wasAggro)
 	{
+		// stop previous movement in case we are in the middle of moving to our
+		//	home location or something
+		StopMovement();
 		TArray<AActor*> overlappingAggroActors;
 		creep->getOverlappingAggroActors(overlappingAggroActors);
 		for (auto actor : overlappingAggroActors)
